@@ -23,8 +23,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "moderoute.decider.connect-timeout-ms=200",
         "moderoute.decider.timeout-ms=500",
         "moderoute.audit.dir=target/test-audit-degraded",
-        "moderoute.recall.store=json",
-        "moderoute.recall.cache-dir=target/test-vectors-degraded",
+        "moderoute.recall.sqlite-path=target/test-vectors-degraded.db",
+        "moderoute.recall.extension-path=lib/native/vec0.dll",
         "moderoute.cards-dir=data/cards"
 })
 @AutoConfigureMockMvc

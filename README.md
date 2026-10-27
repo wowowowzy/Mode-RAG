@@ -5,7 +5,7 @@
 执行者不变，变的是这一次注入的推理骨架。服务本身不调用任何执行模型，也不训练任何模型。
 
 - 单一 Maven 工程，产物是一个可 `java -jar` 启动的服务
-- 无数据库、无缓存服务、无向量库：48 张卡的向量在进程内存，日志追加写 JSONL
+- 无数据库服务：向量存 SQLite（sqlite-vec + WAL），卡片文件加载进只读快照，日志追加写 JSONL
 - 早期契约见 `docs/SPEC.md`
 
 ---
@@ -18,8 +18,8 @@
 # 1) embedding 与精判的配置放 .env.local（已被 .gitignore 忽略）
 #    OPENAI_API_KEY / OPENAI_BASE_URL / OPENAI_EMBEDDING_MODEL
 
-# 2) 取 sqlite-vec 扩展（缺失时服务会自动退回 json 缓存，仍可用）
-powershell -File tools\fetch-sqlite-vec.ps1
+# 2) sqlite-vec 扩展：把 vec0.dll 放到 lib/native/（缺失则服务拒绝启动）
+#    下载：https://github.com/asg017/sqlite-vec/releases/download/v0.1.9/sqlite-vec-0.1.9-loadable-windows-x86_64.tar.gz
 
 # 3) 启动本地精判引擎（依赖与模型都在 D:\Application\Jev-Style）
 powershell -File tools\start-jev.ps1
@@ -34,7 +34,7 @@ java -jar target\moderoute-1.0.0.jar
 ```powershell
 curl.exe http://127.0.0.1:18080/healthz
 curl.exe http://127.0.0.1:18080/v1/cards
-curl.exe -X POST http://127.0.0.1:18080/v1/enhance -H "Content-Type: application/json" --data-binary "@tools/smoke-request.json"
+curl.exe -X POST http://127.0.0.1:18080/v1/enhance -H "Content-Type: application/json" -d "{\"task\":\"为三条产线排布五张订单，订单带最晚完成日\"}"
 ```
 
 离线自检（不依赖网络与模型）：
@@ -156,10 +156,8 @@ task ──embedding──> 余弦 top-k（内存扫描）
 | `moderoute.override-enabled` | `false` | 实验调试参数开关 |
 | `moderoute.recall.embedding` | `openai` | `openai`（任意 OpenAI 兼容 `/v1/embeddings`）或 `mock` |
 | `moderoute.recall.batch-size` | `10` | 单次 embedding 条数，网关限制 ≤20 |
-| `moderoute.recall.store` | `sqlite` | `sqlite`（sqlite-vec + WAL）或 `json`（单文件兜底） |
 | `moderoute.recall.sqlite-path` | `./var/moderoute.db` | 向量库位置；删掉即重算 |
-| `moderoute.recall.extension-path` | `./lib/native/vec0.dll` | sqlite-vec 扩展；缺失时自动退回 `json` |
-| `moderoute.recall.cache-dir` | `./var/vectors` | `json` 模式的缓存目录 |
+| `moderoute.recall.extension-path` | `./lib/native/vec0.dll` | sqlite-vec 扩展；缺失则启动失败 |
 | `moderoute.recall.strip-negative-clause` | `true` | 召回向量剔除「不适用于…」 |
 | `moderoute.decider.provider` | `jev-local` | `jev-local` / `jev-api` / `mock` |
 | `moderoute.decider.base-url` | `http://127.0.0.1:8765` | System One 兼容服务 |
@@ -214,7 +212,7 @@ java tools\GenerateTasks.java
 4. **输出格式示例压缩成字段名清单**，让完整骨架（含失败模式与退出条件）能落在默认 400 token 内。裁剪顺序固定：先丢格式示例，再丢失败模式，最后硬截断。
 5. **placebo 长度对齐「本应注入的骨架长度」**，而不是固定长度。若本次没有合适卡，则对齐全库渲染长度的均值。
 6. **卡片与任务集由同一作者（AI）产出**。「写卡的人不看任务生成器模板」这条纪律在单人 + AI 的开发形态下只能部分执行：任务文本由生成器模板产出、卡片在结构确定后撰写，但无法证明作者隔离。这一点必须写进实验报告的局限章节，不能含糊过去。
-7. **向量落 SQLite，偏离 SPEC「不引入数据库」**。SPEC §3 明确不引数据库；按实际取舍改为 SQLite + sqlite-vec（WAL）。代价是引入 `sqlite-jdbc` 与一个原生扩展（`vec0.dll`），靠 `store: json` 自动兜底；数据库只存**派生向量**，不存会话、不存卡片，删掉即重算，接口契约与决策结果不变。
+7. **向量落 SQLite，偏离 SPEC「不引入数据库」**。SPEC §3 明确不引数据库；按实际取舍改为 SQLite + sqlite-vec（WAL），运行路径只有这一条。代价是引入 `sqlite-jdbc` 与一个原生扩展（`vec0.dll`，缺失则拒绝启动），数据库只存**派生向量**，不存会话、不存卡片，删掉即重算，接口契约与决策结果不变。
 
 ---
 
@@ -226,11 +224,10 @@ src/                服务代码（Maven 标准布局）
 data/
   cards/            48 张模式卡（3 域 × 16）
   tasks/            任务集
-lib/native/vec0.dll sqlite-vec 扩展（tools/fetch-sqlite-vec.ps1 下载，gitignore）
-tools/              任务集生成器 + 运维脚本
+lib/native/vec0.dll sqlite-vec 扩展（gitignore，按 README 下载）
+tools/              任务集生成器 + 启动脚本
 var/                运行时产物（gitignore）
   moderoute.db      向量库（WAL）
-  vectors/          json 模式缓存
   audit/            审计 JSONL
 docs/               SPEC.md / STATUS.md
 ```

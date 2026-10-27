@@ -19,8 +19,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "moderoute.decider.provider=mock",
         "moderoute.override-enabled=true",
         "moderoute.audit.dir=target/test-audit",
-        "moderoute.recall.store=json",
-        "moderoute.recall.cache-dir=target/test-vectors",
+        "moderoute.recall.sqlite-path=target/test-vectors-api.db",
+        "moderoute.recall.extension-path=lib/native/vec0.dll",
         "moderoute.cards-dir=data/cards"
 })
 @AutoConfigureMockMvc

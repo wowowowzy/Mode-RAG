@@ -22,11 +22,8 @@ moderoute:
     base-url: ${OPENAI_BASE_URL:}
     api-key: ${OPENAI_API_KEY:}
     model: ${OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
-    # sqlite = sqlite-vec + WAL；扩展缺失时自动退回 json
-    store: ${MODEROUTE_VECTOR_STORE:sqlite}
     sqlite-path: ${MODEROUTE_VECTOR_DB:./var/moderoute.db}
     extension-path: ${MODEROUTE_SQLITE_VEC:./lib/native/vec0.dll}
-    cache-dir: ${MODEROUTE_VECTOR_CACHE:./var/vectors}
     timeout-ms: ${MODEROUTE_EMBEDDING_TIMEOUT_MS:15000}
     strip-negative-clause: true
     mock-dimension: 256

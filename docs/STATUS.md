@@ -6,15 +6,15 @@
 
 | 项 | 结果 |
 | --- | --- |
-| 构建 | `mvn package` 通过，单 jar `target/moderoute-1.0.0.jar` |
-| 测试 | 46 个用例全绿（接口契约、降级、版本归一化、字母映射、门控、渲染、精判客户端、SQLite 存取） |
+| 构建 | `mvn clean package` 通过，单 jar `target/moderoute-1.0.0.jar` |
+| 测试 | 45 个用例全绿（接口契约、降级、版本归一化、字母映射、门控、渲染、精判客户端、SQLite 存取） |
 | 卡片 | 48 张，3 域 × 8 族 × 2 变体；启动期逐字段校验通过 |
 | 库版本 | `42858df80a60` |
 | embedding | `qwen3.7-text-embedding`，1024 维，网关限制 batch ≤20（已分片） |
-| 向量存储 | SQLite + sqlite-vec v0.1.9，WAL；`vec_distance_cosine` 检索 |
-| 存储耗时 | sqlite 258 µs / json 113 µs（48×1024，top-8，300 轮均值） |
+| 向量存储 | 仅 SQLite + sqlite-vec v0.1.9，WAL；`vec_distance_cosine` 检索 |
+| 存储耗时 | 258 µs（48×1024，top-8，300 轮均值） |
 | 精判 | 本地 JEV `jev-style-0.8b-decision-v3`，torch CPU，单次 2–15 s（受机器负载影响大） |
-| 端到端 | `POST /v1/enhance` → `INJECT`，`planning-capacity-first`，505 字 / 388 token |
+| 端到端 | `POST /v1/enhance` 返回 200，`INJECT`，渲染 473–505 字 |
 | 确定性 | 同一请求两次 `prompt` 逐字节一致 |
 | 删库重算 | 删除 `var/moderoute.db` 后重启，响应 SHA-256 与删除前完全一致 |
 | 降级 | 精判不可达时 200 + `DEGRADED`，规则选卡仍有可用骨架 |
@@ -28,15 +28,14 @@
   - 权重路径 `D:\Application\Jev-Style\model\model.safetensors`
   - VC++ 运行库缺失，已把所需 DLL 复制进 `.venv\Lib\site-packages\torch\lib`，未做系统安装
   - 启动：`powershell -File tools\start-jev.ps1`（自动用 `--model-dir`）
-- sqlite-vec 扩展：`lib/native/vec0.dll`，由 `tools/fetch-sqlite-vec.ps1` 下载（gitignore）
+- sqlite-vec 扩展：`lib/native/vec0.dll`（gitignore，缺失则服务拒绝启动）
 - 服务：`java -jar target\moderoute-1.0.0.jar`，端口 18080
-- 冒烟：`powershell -File tools\smoke.ps1`
 
 ## 观测口径
 
 - `meta.confidence`：温度缩放后的最优选项概率
-- 审计新增 `recallMs` / `decideMs`：召回耗时**含任务 embedding 的网络调用**，纯 SQL 检索约 0.2 ms
-- `vectorStore` 字段：`sqlite` 或 `json`（扩展不可用时的自动兜底）
+- 审计 `recallMs` / `decideMs`：召回耗时**含任务 embedding 的网络调用**，纯 SQL 检索约 0.2 ms
+- 审计 `vectorStore`：固定为 `sqlite`
 
 ## 下一轮（实验）
 
