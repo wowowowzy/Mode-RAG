@@ -24,9 +24,9 @@
 - JEV：依赖、pip 缓存、HF 缓存、权重（1.44 GB）全部在 `D:\Application\Jev-Style`
   - 权重路径 `D:\Application\Jev-Style\model\model.safetensors`
   - VC++ 运行库缺失，已把所需 DLL 复制进 `.venv\Lib\site-packages\torch\lib`，未做系统安装
-  - 启动：`powershell -File scripts\start-jev.ps1`（自动用 `--model-dir`）
+  - 启动：`powershell -File tools\start-jev.ps1`（自动用 `--model-dir`）
 - 服务：`java -jar target\moderoute-1.0.0.jar`，端口 18080
-- 冒烟：`powershell -File scripts\smoke.ps1`
+- 冒烟：`powershell -File tools\smoke.ps1`
 
 ## 下一轮（实验）
 

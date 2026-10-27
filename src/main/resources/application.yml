@@ -14,7 +14,7 @@ server:
   shutdown: graceful
 
 moderoute:
-  cards-dir: ${MODEROUTE_CARDS_DIR:./cards}
+  cards-dir: ${MODEROUTE_CARDS_DIR:./data/cards}
   # 只在实验时打开；打开后 override 才生效。
   override-enabled: ${MODEROUTE_OVERRIDE_ENABLED:false}
   recall:
@@ -22,7 +22,7 @@ moderoute:
     base-url: ${OPENAI_BASE_URL:}
     api-key: ${OPENAI_API_KEY:}
     model: ${OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
-    cache-dir: ${MODEROUTE_VECTOR_CACHE:./runs/.vectors}
+    cache-dir: ${MODEROUTE_VECTOR_CACHE:./var/vectors}
     timeout-ms: ${MODEROUTE_EMBEDDING_TIMEOUT_MS:15000}
     strip-negative-clause: true
     mock-dimension: 256
@@ -46,7 +46,7 @@ moderoute:
     inject-floor: ${MODEROUTE_INJECT_FLOOR:0.0}
   audit:
     enabled: ${MODEROUTE_AUDIT:true}
-    dir: ${MODEROUTE_AUDIT_DIR:./runs/audit}
+    dir: ${MODEROUTE_AUDIT_DIR:./var/audit}
 
 springdoc:
   api-docs:

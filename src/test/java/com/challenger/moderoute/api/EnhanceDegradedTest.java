@@ -24,7 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "moderoute.decider.timeout-ms=500",
         "moderoute.audit.dir=target/test-audit-degraded",
         "moderoute.recall.cache-dir=target/test-vectors-degraded",
-        "moderoute.cards-dir=cards"
+        "moderoute.cards-dir=data/cards"
 })
 @AutoConfigureMockMvc
 class EnhanceDegradedTest {

@@ -13,7 +13,7 @@ class CardLibraryLoadTest {
 
     @Test
     void 真实卡片库必须满足全部字段约束() {
-        List<Card> cards = CardLoader.load(Path.of("cards"));
+        List<Card> cards = CardLoader.load(Path.of("data/cards"));
 
         assertThat(cards).hasSize(48);
         Map<CardDomain, Long> byDomain = cards.stream()
@@ -37,7 +37,7 @@ class CardLibraryLoadTest {
 
     @Test
     void 库版本为十二位十六进制() {
-        String version = LibraryVersion.compute(Path.of("cards"));
+        String version = LibraryVersion.compute(Path.of("data/cards"));
         assertThat(version).matches("[0-9a-f]{12}");
     }
 

@@ -4,6 +4,6 @@ target/
 *.iml
 .vscode/
 .env.local
-runs/
+var/
 logs/
 *.log

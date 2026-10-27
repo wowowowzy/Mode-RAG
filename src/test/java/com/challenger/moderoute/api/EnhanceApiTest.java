@@ -20,7 +20,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "moderoute.override-enabled=true",
         "moderoute.audit.dir=target/test-audit",
         "moderoute.recall.cache-dir=target/test-vectors",
-        "moderoute.cards-dir=cards"
+        "moderoute.cards-dir=data/cards"
 })
 @AutoConfigureMockMvc
 class EnhanceApiTest {

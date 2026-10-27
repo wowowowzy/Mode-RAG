@@ -15,7 +15,7 @@ import java.util.Random;
 public final class GenerateTasks {
 
     private static final long SEED = 20261027L;
-    private static final Path OUT = Path.of("tasks", "tasks.jsonl");
+    private static final Path OUT = Path.of("data", "tasks", "tasks.jsonl");
 
     public static void main(String[] args) throws Exception {
         Random rnd = new Random(SEED);

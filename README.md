@@ -19,7 +19,7 @@
 #    OPENAI_API_KEY / OPENAI_BASE_URL / OPENAI_EMBEDDING_MODEL
 
 # 2) 启动本地精判引擎（依赖与模型都在 D:\Application\Jev-Style）
-powershell -File scripts\start-jev.ps1
+powershell -File tools\start-jev.ps1
 
 # 3) 构建并启动服务
 mvn -q -DskipTests package
@@ -31,7 +31,7 @@ java -jar target\moderoute-1.0.0.jar
 ```powershell
 curl.exe http://127.0.0.1:18080/healthz
 curl.exe http://127.0.0.1:18080/v1/cards
-curl.exe -X POST http://127.0.0.1:18080/v1/enhance -H "Content-Type: application/json" --data-binary "@scripts/smoke-request.json"
+curl.exe -X POST http://127.0.0.1:18080/v1/enhance -H "Content-Type: application/json" --data-binary "@tools/smoke-request.json"
 ```
 
 离线自检（不依赖网络与模型）：
@@ -121,7 +121,7 @@ task ──embedding──> 余弦 top-k（内存扫描）
      ──温度缩放────> 标定后置信度
      ──门控────> None 胜出=FALLBACK，否则 INJECT
      ──渲染────> prompt（受 budgetTokens 约束）
-     ──审计────> runs/audit/audit-YYYY-MM-DD.jsonl
+     ──审计────> var/audit/audit-YYYY-MM-DD.jsonl
 ```
 
 任何一步抛异常都转为 `DEGRADED`：用字符二元组相似度选卡并渲染，仍然返回 200。
@@ -153,14 +153,14 @@ task ──embedding──> 余弦 top-k（内存扫描）
 | `moderoute.override-enabled` | `false` | 实验调试参数开关 |
 | `moderoute.recall.embedding` | `openai` | `openai`（任意 OpenAI 兼容 `/v1/embeddings`）或 `mock` |
 | `moderoute.recall.batch-size` | `10` | 单次 embedding 条数，网关限制 ≤20 |
-| `moderoute.recall.cache-dir` | `./runs/.vectors` | 纯缓存，删掉只会重算 |
+| `moderoute.recall.cache-dir` | `./var/vectors` | 纯缓存，删掉只会重算 |
 | `moderoute.recall.strip-negative-clause` | `true` | 召回向量剔除「不适用于…」 |
 | `moderoute.decider.provider` | `jev-local` | `jev-local` / `jev-api` / `mock` |
 | `moderoute.decider.base-url` | `http://127.0.0.1:8765` | System One 兼容服务 |
 | `moderoute.decider.temperature` | `1.0` | **我们自己的**温度缩放，只在验证集上拟合 |
 | `moderoute.gate.inject-floor` | `0` | 可选安全阀；默认完全由「None 是否胜出」决定 |
 | `moderoute.render.default-budget-tokens` | `400` | 请求未指定时的预算 |
-| `moderoute.audit.dir` | `./runs/audit` | 每请求一行 JSONL |
+| `moderoute.audit.dir` | `./var/audit` | 每请求一行 JSONL |
 
 ---
 
@@ -168,7 +168,7 @@ task ──embedding──> 余弦 top-k（内存扫描）
 
 ### 模式卡
 
-`cards/<domain>/*.yaml`，48 张 = 3 域 × 8 族 × 2 变体。字段：`id` / `domain` / `name` / `applicableWhen`（≤80 字，必须含「不适用于…」）/ `steps`（4–6）/ `failureModes`（2–4）/ `exitConditions`（1–3）/ `outputContract`。
+`data/cards/<domain>/*.yaml`，48 张 = 3 域 × 8 族 × 2 变体。字段：`id` / `domain` / `name` / `applicableWhen`（≤80 字，必须含「不适用于…」）/ `steps`（4–6）/ `failureModes`（2–4）/ `exitConditions`（1–3）/ `outputContract`。
 
 加载期校验到字段级：任何一张卡不合规，服务直接拒绝启动（不带半份库对外服务）。
 
@@ -176,7 +176,7 @@ task ──embedding──> 余弦 top-k（内存扫描）
 
 ### 任务集
 
-`tasks/tasks.jsonl`，200 条（planning 120 + debate 80；val 60 / test 140），由 `tools/GenerateTasks.java` 确定性生成：
+`data/tasks/tasks.jsonl`，200 条（planning 120 + debate 80；val 60 / test 140），由 `tools/GenerateTasks.java` 确定性生成：
 
 ```powershell
 java tools\GenerateTasks.java
@@ -213,21 +213,19 @@ java tools\GenerateTasks.java
 ## 8. 目录
 
 ```
-src/main/java/com/challenger/moderoute/
-  api/        接口与 DTO
-  card/       卡片模型、加载校验、版本哈希、只读快照
-  recall/     embedding 后端、向量缓存、余弦召回
-  decide/     选项映射、System One 客户端、标定、门控、规则降级
-  render/     骨架渲染、占位骨架、token 估算
-  service/    编排
-  audit/      JSONL 审计
-cards/        48 张模式卡
-tasks/        任务集
-tools/        任务集生成器（JDK 单文件）
-scripts/      启动与冒烟脚本
-docs/SPEC.md  接口与数据契约
-runs/         向量缓存与审计日志（gitignore）
+pom.xml
+src/                服务代码（Maven 标准布局）
+data/
+  cards/            48 张模式卡（3 域 × 16）
+  tasks/            任务集
+tools/              任务集生成器 + 运维脚本
+var/                运行时产物（gitignore）
+  vectors/          向量缓存
+  audit/            审计 JSONL
+docs/               SPEC.md / STATUS.md
 ```
+
+根目录只有 `src / data / tools / var / docs` 五个目录，运行产物全部收在 `var/`，删掉不影响行为。
 
 ## 9. 依赖纪律
 

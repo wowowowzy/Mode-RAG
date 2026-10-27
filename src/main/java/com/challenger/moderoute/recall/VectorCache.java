@@ -12,7 +12,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,7 +32,7 @@ public class VectorCache {
     }
 
     public Optional<float[][]> load(String libraryVersion, String model, List<String> cardIds) {
-        Path file = fileFor(libraryVersion, model, cardIds.size());
+        Path file = fileFor(libraryVersion, model);
         if (!Files.isRegularFile(file)) {
             return Optional.empty();
         }
@@ -83,7 +82,8 @@ public class VectorCache {
 
     public void save(String libraryVersion, String model, List<String> cardIds, float[][] vectors) {
         try {
-            Files.createDirectories(dir);
+            Path file = fileFor(libraryVersion, model);
+            Files.createDirectories(file.getParent());
             var root = mapper.createObjectNode();
             root.put("version", libraryVersion);
             root.put("model", model);
@@ -97,8 +97,7 @@ public class VectorCache {
                     row.add(value);
                 }
             }
-            Path file = fileFor(libraryVersion, model, cardIds.size());
-            Path tmp = dir.resolve(file.getFileName() + ".tmp");
+            Path tmp = file.resolveSibling(file.getFileName() + ".tmp");
             Files.writeString(tmp, mapper.writeValueAsString(root), StandardCharsets.UTF_8);
             Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException | RuntimeException e) {
@@ -106,8 +105,9 @@ public class VectorCache {
         }
     }
 
-    private Path fileFor(String libraryVersion, String model, int count) {
-        return dir.resolve(libraryVersion + "-" + sanitize(model) + "-" + count + ".json");
+    /** var/vectors/<库版本>/<模型>.json：一眼能看出是哪个版本的向量，过期直接删目录。 */
+    private Path fileFor(String libraryVersion, String model) {
+        return dir.resolve(sanitize(libraryVersion)).resolve(sanitize(model) + ".json");
     }
 
     private static String sanitize(String value) {
