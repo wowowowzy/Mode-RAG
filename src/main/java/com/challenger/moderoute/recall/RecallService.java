@@ -4,13 +4,11 @@ import com.challenger.moderoute.card.CardLibrary;
 import com.challenger.moderoute.card.CardLibraryService;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 /**
- * 粗筛：全库余弦相似度暴力扫描。48 张卡约几万次乘加，进程内几微秒，
- * 比任何外部向量库的往返都快一个数量级。
+ * 粗筛。检索交给 VectorStore（SQLite 里走 vec_distance_cosine，文件版走进程内余弦），
+ * 这里只负责把任务向量化并做参数收口。
  */
 @Service
 public class RecallService {
@@ -20,15 +18,17 @@ public class RecallService {
 
     private final CardLibraryService libraryService;
     private final EmbeddingBackend embeddingBackend;
+    private final VectorStore vectorStore;
 
-    public RecallService(CardLibraryService libraryService, EmbeddingBackend embeddingBackend) {
+    public RecallService(CardLibraryService libraryService, EmbeddingBackend embeddingBackend, VectorStore vectorStore) {
         this.libraryService = libraryService;
         this.embeddingBackend = embeddingBackend;
+        this.vectorStore = vectorStore;
     }
 
     public List<ScoredCard> recall(String task, int topK) {
         CardLibrary library = libraryService.ensureVectors();
-        if (!library.vectorsReady()) {
+        if (!libraryService.vectorsReady()) {
             throw new RecallException("向量未就绪");
         }
 
@@ -38,38 +38,20 @@ public class RecallService {
         } catch (RuntimeException e) {
             throw new RecallException("任务向量化失败: " + e.getMessage(), e);
         }
-        if (query == null || query.length != library.dimension()) {
-            throw new RecallException("查询向量维度异常: "
-                    + (query == null ? "null" : query.length) + " vs " + library.dimension());
+        if (query == null || query.length == 0) {
+            throw new RecallException("任务向量为空");
         }
 
         int limit = Math.min(topK, MAX_CARDS_FOR_DECISION);
-        List<ScoredCard> scored = new ArrayList<>(library.cards().size());
-        for (int i = 0; i < library.cards().size(); i++) {
-            double score = round6(cosine(query, library.vectors()[i]));
-            scored.add(new ScoredCard(library.cards().get(i).id(), score));
+        try {
+            List<ScoredCard> scored = vectorStore.topK(
+                    library.version(), embeddingBackend.name(), query, limit);
+            if (scored.isEmpty()) {
+                throw new RecallException("向量存储未返回候选");
+            }
+            return scored;
+        } catch (RuntimeException e) {
+            throw new RecallException("向量检索失败: " + e.getMessage(), e);
         }
-        scored.sort(Comparator.comparingDouble(ScoredCard::score).reversed()
-                .thenComparing(ScoredCard::cardId));
-        return List.copyOf(scored.subList(0, Math.min(limit, scored.size())));
-    }
-
-    static double cosine(float[] a, float[] b) {
-        double dot = 0;
-        double na = 0;
-        double nb = 0;
-        for (int i = 0; i < a.length; i++) {
-            dot += a[i] * b[i];
-            na += a[i] * a[i];
-            nb += b[i] * b[i];
-        }
-        if (na == 0 || nb == 0) {
-            return 0;
-        }
-        return dot / (Math.sqrt(na) * Math.sqrt(nb));
-    }
-
-    private static double round6(double value) {
-        return Math.round(value * 1_000_000d) / 1_000_000d;
     }
 }

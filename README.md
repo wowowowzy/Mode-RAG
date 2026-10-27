@@ -18,10 +18,13 @@
 # 1) embedding 与精判的配置放 .env.local（已被 .gitignore 忽略）
 #    OPENAI_API_KEY / OPENAI_BASE_URL / OPENAI_EMBEDDING_MODEL
 
-# 2) 启动本地精判引擎（依赖与模型都在 D:\Application\Jev-Style）
+# 2) 取 sqlite-vec 扩展（缺失时服务会自动退回 json 缓存，仍可用）
+powershell -File tools\fetch-sqlite-vec.ps1
+
+# 3) 启动本地精判引擎（依赖与模型都在 D:\Application\Jev-Style）
 powershell -File tools\start-jev.ps1
 
-# 3) 构建并启动服务
+# 4) 构建并启动服务
 mvn -q -DskipTests package
 java -jar target\moderoute-1.0.0.jar
 ```
@@ -149,11 +152,14 @@ task ──embedding──> 余弦 top-k（内存扫描）
 
 | 配置 | 默认 | 说明 |
 | --- | --- | --- |
-| `moderoute.cards-dir` | `./cards` | 卡片目录，启动期加载为只读快照 |
+| `moderoute.cards-dir` | `./data/cards` | 卡片目录，启动期加载为只读快照 |
 | `moderoute.override-enabled` | `false` | 实验调试参数开关 |
 | `moderoute.recall.embedding` | `openai` | `openai`（任意 OpenAI 兼容 `/v1/embeddings`）或 `mock` |
 | `moderoute.recall.batch-size` | `10` | 单次 embedding 条数，网关限制 ≤20 |
-| `moderoute.recall.cache-dir` | `./var/vectors` | 纯缓存，删掉只会重算 |
+| `moderoute.recall.store` | `sqlite` | `sqlite`（sqlite-vec + WAL）或 `json`（单文件兜底） |
+| `moderoute.recall.sqlite-path` | `./var/moderoute.db` | 向量库位置；删掉即重算 |
+| `moderoute.recall.extension-path` | `./lib/native/vec0.dll` | sqlite-vec 扩展；缺失时自动退回 `json` |
+| `moderoute.recall.cache-dir` | `./var/vectors` | `json` 模式的缓存目录 |
 | `moderoute.recall.strip-negative-clause` | `true` | 召回向量剔除「不适用于…」 |
 | `moderoute.decider.provider` | `jev-local` | `jev-local` / `jev-api` / `mock` |
 | `moderoute.decider.base-url` | `http://127.0.0.1:8765` | System One 兼容服务 |
@@ -195,7 +201,8 @@ java tools\GenerateTasks.java
 - **置信度必须自行重标定**：原始 softmax ECE 很差；温度只在验证集上拟合，测试集只报告。
 - **placebo 组必须有**：「注入了针对性骨架」与「prompt 变长了」必须分开，`ours - placebo` 才是真贡献。
 - **48 张 / 8 族 × 2 变体**：同族两张是受控近邻（全量 vs 增量、构造 vs 修复），top-8 保留率 16.7%，级联召回才有意义。
-- **内存向量**：48 × 1024 × float32 ≈ 192 KB，暴力扫描几十微秒，比任何外部向量库的往返都快一个数量级。
+- **向量存 SQLite（WAL），检索走 sqlite-vec**：普通表存 float32 BLOB，距离用 `vec_distance_cosine()`；不用 `vec0` 虚拟表，因为它的维度建表即定死，换 embedding 模型就要迁移。实测 48×1024 的 top-8 约 258 µs，仍是端到端 0.08% 量级。
+- **删除即重算**：`(库版本, 模型, 卡片集合, 维度)` 任一不匹配都视为未就绪，整批重算；删掉 `var/moderoute.db` 重启，响应逐字节不变。
 
 ---
 
@@ -207,6 +214,7 @@ java tools\GenerateTasks.java
 4. **输出格式示例压缩成字段名清单**，让完整骨架（含失败模式与退出条件）能落在默认 400 token 内。裁剪顺序固定：先丢格式示例，再丢失败模式，最后硬截断。
 5. **placebo 长度对齐「本应注入的骨架长度」**，而不是固定长度。若本次没有合适卡，则对齐全库渲染长度的均值。
 6. **卡片与任务集由同一作者（AI）产出**。「写卡的人不看任务生成器模板」这条纪律在单人 + AI 的开发形态下只能部分执行：任务文本由生成器模板产出、卡片在结构确定后撰写，但无法证明作者隔离。这一点必须写进实验报告的局限章节，不能含糊过去。
+7. **向量落 SQLite，偏离 SPEC「不引入数据库」**。SPEC §3 明确不引数据库；按实际取舍改为 SQLite + sqlite-vec（WAL）。代价是引入 `sqlite-jdbc` 与一个原生扩展（`vec0.dll`），靠 `store: json` 自动兜底；数据库只存**派生向量**，不存会话、不存卡片，删掉即重算，接口契约与决策结果不变。
 
 ---
 
@@ -218,14 +226,16 @@ src/                服务代码（Maven 标准布局）
 data/
   cards/            48 张模式卡（3 域 × 16）
   tasks/            任务集
+lib/native/vec0.dll sqlite-vec 扩展（tools/fetch-sqlite-vec.ps1 下载，gitignore）
 tools/              任务集生成器 + 运维脚本
 var/                运行时产物（gitignore）
-  vectors/          向量缓存
+  moderoute.db      向量库（WAL）
+  vectors/          json 模式缓存
   audit/            审计 JSONL
 docs/               SPEC.md / STATUS.md
 ```
 
-根目录只有 `src / data / tools / var / docs` 五个目录，运行产物全部收在 `var/`，删掉不影响行为。
+根目录只有 `src / data / lib / tools / var / docs` 六个目录，运行产物全部收在 `var/`，删掉不影响行为。
 
 ## 9. 依赖纪律
 

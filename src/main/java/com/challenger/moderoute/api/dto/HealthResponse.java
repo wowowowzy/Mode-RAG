@@ -6,5 +6,6 @@ public record HealthResponse(
         int cardCount,
         boolean vectorsReady,
         String embeddingModel,
+        String vectorStore,
         String decider) {
 }

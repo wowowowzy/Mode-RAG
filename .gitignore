@@ -7,3 +7,4 @@ target/
 var/
 logs/
 *.log
+lib/native/*.dll

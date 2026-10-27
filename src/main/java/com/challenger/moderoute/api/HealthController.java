@@ -25,13 +25,14 @@ public class HealthController {
     @Operation(summary = "健康检查")
     public HealthResponse health() {
         CardLibrary library = libraryService.library();
-        boolean vectorsReady = library.vectorsReady();
+        boolean vectorsReady = libraryService.vectorsReady();
         return new HealthResponse(
                 vectorsReady ? "UP" : "DEGRADED",
                 library.version(),
                 library.cards().size(),
                 vectorsReady,
-                library.embeddingModel(),
+                libraryService.embeddingModelName(),
+                libraryService.vectorStoreKind(),
                 properties.getDecider().getProvider());
     }
 }

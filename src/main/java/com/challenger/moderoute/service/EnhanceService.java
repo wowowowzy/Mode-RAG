@@ -96,16 +96,22 @@ public class EnhanceService {
         long start = System.nanoTime();
         String overrideMode = null;
         Outcome outcome;
+        long recallMs = -1;
+        long decideMs = -1;
         EnhanceRequest.OverrideSpec override = request.override();
         if (properties.isOverrideEnabled() && override != null) {
             overrideMode = override.mode() == null ? "" : override.mode().toLowerCase(Locale.ROOT);
             outcome = runOverride(overrideMode, override, task, topK, budgetTokens, library);
         } else {
-            outcome = runPipeline(task, topK, budgetTokens, library);
+            PipelineResult result = runPipeline(task, topK, budgetTokens, library);
+            outcome = result.outcome();
+            recallMs = result.recallMs();
+            decideMs = result.decideMs();
         }
         long latencyMs = (System.nanoTime() - start) / 1_000_000L;
 
-        auditLogger.record(buildAudit(traceId, overrideMode, outcome, library, latencyMs, topK, budgetTokens, task));
+        auditLogger.record(buildAudit(traceId, overrideMode, outcome, library, latencyMs,
+                recallMs, decideMs, topK, budgetTokens, task));
 
         return new EnhanceResponse(
                 outcome.prompt(),
@@ -119,33 +125,48 @@ public class EnhanceService {
 
     // ---------------------------------------------------------------- 主链路
 
-    private Outcome runPipeline(String task, int topK, int budgetTokens, CardLibrary library) {
+    private PipelineResult runPipeline(String task, int topK, int budgetTokens, CardLibrary library) {
         List<ScoredCard> candidates;
+        long recallStart = System.nanoTime();
         try {
             candidates = recallService.recall(task, topK);
         } catch (RuntimeException e) {
             log.warn("召回失败，转规则降级: {}", e.getMessage());
-            return degrade(task, topK, budgetTokens, library, candidatesOrEmpty(null), "recall: " + e.getMessage());
+            long recallMs = (System.nanoTime() - recallStart) / 1_000_000L;
+            return new PipelineResult(
+                    degrade(task, topK, budgetTokens, library, candidatesOrEmpty(null), "recall: " + e.getMessage()),
+                    recallMs, -1);
         }
+        long recallMs = (System.nanoTime() - recallStart) / 1_000_000L;
         if (candidates.isEmpty()) {
-            return new Outcome(GateAction.FALLBACK, null, 0.0, "", candidates, null, null);
+            return new PipelineResult(
+                    new Outcome(GateAction.FALLBACK, null, 0.0, "", candidates, null, null), recallMs, -1);
         }
 
         DriverDecision driver;
+        long decideStart = System.nanoTime();
         try {
             driver = decide(task, candidates, library);
         } catch (RuntimeException e) {
             log.warn("精判失败，转规则降级: {}", e.getMessage());
-            return degrade(task, topK, budgetTokens, library, candidates, "decider: " + e.getMessage());
+            long decideMs = (System.nanoTime() - decideStart) / 1_000_000L;
+            return new PipelineResult(
+                    degrade(task, topK, budgetTokens, library, candidates, "decider: " + e.getMessage()),
+                    recallMs, decideMs);
         }
+        long decideMs = (System.nanoTime() - decideStart) / 1_000_000L;
 
         GateDecision gate = Gate.decide(driver.decision(), properties.getGate().getInjectFloor());
         if (gate.action() == GateAction.FALLBACK) {
-            return new Outcome(GateAction.FALLBACK, null, gate.confidence(), "", candidates, driver.decision(), null);
+            return new PipelineResult(
+                    new Outcome(GateAction.FALLBACK, null, gate.confidence(), "", candidates, driver.decision(), null),
+                    recallMs, decideMs);
         }
         Card card = library.byId().get(gate.cardId());
         String prompt = renderer.render(card, budgetTokens);
-        return new Outcome(GateAction.INJECT, card.id(), gate.confidence(), prompt, candidates, driver.decision(), null);
+        return new PipelineResult(
+                new Outcome(GateAction.INJECT, card.id(), gate.confidence(), prompt, candidates, driver.decision(), null),
+                recallMs, decideMs);
     }
 
     private DriverDecision decide(String task, List<ScoredCard> candidates, CardLibrary library) {
@@ -224,11 +245,11 @@ public class EnhanceService {
         int targetChars = 0;
         CardDomain domain = CardDomain.GENERAL;
         try {
-            Outcome normal = runPipeline(task, topK, budgetTokens, library);
-            if (!normal.prompt().isEmpty()) {
-                targetChars = normal.prompt().length();
-                if (normal.cardId() != null) {
-                    domain = library.byId().get(normal.cardId()).domain();
+            PipelineResult normal = runPipeline(task, topK, budgetTokens, library);
+            if (!normal.outcome().prompt().isEmpty()) {
+                targetChars = normal.outcome().prompt().length();
+                if (normal.outcome().cardId() != null) {
+                    domain = library.byId().get(normal.outcome().cardId()).domain();
                 }
             }
         } catch (RuntimeException e) {
@@ -303,18 +324,25 @@ public class EnhanceService {
     // ---------------------------------------------------------------- 审计
 
     private Map<String, Object> buildAudit(String traceId, String overrideMode, Outcome outcome,
-                                           CardLibrary library, long latencyMs, int topK, int budgetTokens,
-                                           String task) {
+                                           CardLibrary library, long latencyMs, long recallMs, long decideMs,
+                                           int topK, int budgetTokens, String task) {
         Map<String, Object> event = new LinkedHashMap<>();
         event.put("ts", Instant.now().toString());
         event.put("traceId", traceId);
         event.put("libraryVersion", library.version());
-        event.put("embeddingModel", library.embeddingModel());
+        event.put("embeddingModel", libraryService.embeddingModelName());
+        event.put("vectorStore", libraryService.vectorStoreKind());
         event.put("taskSha256", HexFormat.of().formatHex(sha256(task)));
         event.put("taskLength", task.codePointCount(0, task.length()));
         event.put("topK", topK);
         event.put("budgetTokens", budgetTokens);
         event.put("latencyMs", latencyMs);
+        if (recallMs >= 0) {
+            event.put("recallMs", recallMs);
+        }
+        if (decideMs >= 0) {
+            event.put("decideMs", decideMs);
+        }
         if (overrideMode != null && !overrideMode.isEmpty()) {
             event.put("override", overrideMode);
         }
@@ -404,6 +432,9 @@ public class EnhanceService {
     }
 
     private record DriverDecision(Decision decision) {
+    }
+
+    private record PipelineResult(Outcome outcome, long recallMs, long decideMs) {
     }
 
     private record Outcome(

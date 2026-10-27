@@ -63,7 +63,11 @@ public class ModeRouteProperties {
         private String baseUrl = "";
         private String apiKey = "";
         private String model = "text-embedding-3-small";
-        private String cacheDir = "./runs/.vectors";
+        /** sqlite（sqlite-vec + WAL）或 json（单文件缓存，兜底）。 */
+        private String store = "sqlite";
+        private String sqlitePath = "./var/moderoute.db";
+        private String extensionPath = "./lib/native/vec0.dll";
+        private String cacheDir = "./var/vectors";
         private int timeoutMs = 15_000;
         /** 召回向量是否剔除「不适用于…」负例，默认剔除。 */
         private boolean stripNegativeClause = true;
@@ -110,6 +114,30 @@ public class ModeRouteProperties {
 
         public void setCacheDir(String cacheDir) {
             this.cacheDir = cacheDir;
+        }
+
+        public String getStore() {
+            return store;
+        }
+
+        public void setStore(String store) {
+            this.store = store;
+        }
+
+        public String getSqlitePath() {
+            return sqlitePath;
+        }
+
+        public void setSqlitePath(String sqlitePath) {
+            this.sqlitePath = sqlitePath;
+        }
+
+        public String getExtensionPath() {
+            return extensionPath;
+        }
+
+        public void setExtensionPath(String extensionPath) {
+            this.extensionPath = extensionPath;
         }
 
         public int getTimeoutMs() {
