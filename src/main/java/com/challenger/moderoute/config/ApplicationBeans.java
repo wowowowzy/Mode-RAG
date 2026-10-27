@@ -1,13 +1,22 @@
 package com.challenger.moderoute.config;
 
-import com.challenger.moderoute.decide.DecisionEngine;
-import com.challenger.moderoute.decide.MockDecisionEngine;
-import com.challenger.moderoute.decide.SystemOneClient;
-import com.challenger.moderoute.recall.EmbeddingBackend;
-import com.challenger.moderoute.recall.MockEmbeddingModel;
-import com.challenger.moderoute.recall.OpenAiCompatibleEmbeddingModel;
-import com.challenger.moderoute.recall.SqliteVectorStore;
-import com.challenger.moderoute.recall.VectorStore;
+import com.challenger.moderoute.client.DecisionEngine;
+import com.challenger.moderoute.client.EmbeddingBackend;
+import com.challenger.moderoute.client.MockDecisionEngine;
+import com.challenger.moderoute.client.MockEmbeddingModel;
+import com.challenger.moderoute.client.OpenAiCompatibleEmbeddingModel;
+import com.challenger.moderoute.client.SystemOneClient;
+import com.challenger.moderoute.mapper.impl.SqliteVectorMapper;
+import com.challenger.moderoute.mapper.VectorMapper;
+
+import com.challenger.moderoute.client.DecisionEngine;
+import com.challenger.moderoute.client.MockDecisionEngine;
+import com.challenger.moderoute.client.SystemOneClient;
+import com.challenger.moderoute.client.EmbeddingBackend;
+import com.challenger.moderoute.client.MockEmbeddingModel;
+import com.challenger.moderoute.client.OpenAiCompatibleEmbeddingModel;
+import com.challenger.moderoute.mapper.impl.SqliteVectorMapper;
+import com.challenger.moderoute.mapper.VectorMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,9 +55,9 @@ public class ApplicationBeans {
      * 不静默退回其它实现——运行路径只有一条。
      */
     @Bean
-    public VectorStore vectorStore(ModeRouteProperties properties) {
+    public VectorMapper vectorStore(ModeRouteProperties properties) {
         ModeRouteProperties.Recall recall = properties.getRecall();
-        SqliteVectorStore store = new SqliteVectorStore(
+        SqliteVectorMapper store = new SqliteVectorMapper(
                 Path.of(recall.getSqlitePath()), Path.of(recall.getExtensionPath()));
         try {
             store.probe();

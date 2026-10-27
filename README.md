@@ -220,7 +220,18 @@ java tools\GenerateTasks.java
 
 ```
 pom.xml
-src/                服务代码（Maven 标准布局）
+src/main/java/com/challenger/moderoute/
+  controller/        3 个 REST 入口
+  service/           业务接口（Enhance / Recall / Decide / Render / CardLibrary / Audit）
+  service/impl/      对应实现
+  mapper/            数据访问接口（卡片文件、向量库）
+  mapper/impl/       YAML 加载、SQLite + sqlite-vec
+  entity/            领域对象（Card / CardLibrary / Decision / OptionSet ...）
+  entity/enums/      枚举
+  dto/               请求 / 响应体
+  client/            外部依赖适配（embedding、System One、mock）
+  common/            异常与全局处理；common/util 纯算法
+  config/            配置与 Bean 装配
 data/
   cards/            48 张模式卡（3 域 × 16）
   tasks/            任务集
@@ -232,7 +243,7 @@ var/                运行时产物（gitignore）
 docs/               SPEC.md / STATUS.md
 ```
 
-根目录只有 `src / data / lib / tools / var / docs` 六个目录，运行产物全部收在 `var/`，删掉不影响行为。
+调用方向只有一条：`controller → service(接口) → mapper / client`，`entity` 与 `dto` 不反向依赖任何层。根目录只有 `src / data / lib / tools / var / docs`，运行产物全部收在 `var/`，删掉不影响行为。
 
 ## 9. 依赖纪律
 

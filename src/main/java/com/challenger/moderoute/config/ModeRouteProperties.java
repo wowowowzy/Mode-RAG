@@ -1,5 +1,7 @@
 package com.challenger.moderoute.config;
 
+import com.challenger.moderoute.common.util.Gate;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
