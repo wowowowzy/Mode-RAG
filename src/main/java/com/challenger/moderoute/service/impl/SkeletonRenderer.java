@@ -3,7 +3,6 @@ package com.challenger.moderoute.service.impl;
 import com.challenger.moderoute.common.util.TokenEstimator;
 import com.challenger.moderoute.entity.Card;
 
-import com.challenger.moderoute.entity.Card;
 import org.springframework.stereotype.Component;
 
 /**

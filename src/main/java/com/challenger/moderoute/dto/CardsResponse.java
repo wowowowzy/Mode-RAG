@@ -3,7 +3,6 @@ package com.challenger.moderoute.dto;
 import com.challenger.moderoute.common.util.LibraryVersion;
 import com.challenger.moderoute.entity.Card;
 
-import com.challenger.moderoute.entity.Card;
 
 import java.util.List;
 

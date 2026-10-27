@@ -9,10 +9,6 @@ import com.challenger.moderoute.entity.enums.CardDomain;
 import com.challenger.moderoute.entity.enums.GateAction;
 import com.challenger.moderoute.service.impl.RuleFallback;
 
-import com.challenger.moderoute.entity.Card;
-import com.challenger.moderoute.entity.enums.CardDomain;
-import com.challenger.moderoute.entity.CardLibrary;
-import com.challenger.moderoute.config.ModeRouteProperties;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

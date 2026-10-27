@@ -4,9 +4,6 @@ import com.challenger.moderoute.entity.Card;
 import com.challenger.moderoute.entity.enums.CardDomain;
 import com.challenger.moderoute.service.RenderService;
 
-import com.challenger.moderoute.entity.Card;
-import com.challenger.moderoute.entity.enums.CardDomain;
-import com.challenger.moderoute.service.RenderService;
 import org.springframework.stereotype.Service;
 
 /**

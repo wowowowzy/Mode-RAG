@@ -6,17 +6,10 @@ import com.challenger.moderoute.client.MockDecisionEngine;
 import com.challenger.moderoute.client.MockEmbeddingModel;
 import com.challenger.moderoute.client.OpenAiCompatibleEmbeddingModel;
 import com.challenger.moderoute.client.SystemOneClient;
-import com.challenger.moderoute.mapper.impl.SqliteVectorMapper;
+import com.challenger.moderoute.mapper.CardMapper;
 import com.challenger.moderoute.mapper.VectorMapper;
-
-import com.challenger.moderoute.client.DecisionEngine;
-import com.challenger.moderoute.client.MockDecisionEngine;
-import com.challenger.moderoute.client.SystemOneClient;
-import com.challenger.moderoute.client.EmbeddingBackend;
-import com.challenger.moderoute.client.MockEmbeddingModel;
-import com.challenger.moderoute.client.OpenAiCompatibleEmbeddingModel;
+import com.challenger.moderoute.mapper.impl.SqliteCardMapper;
 import com.challenger.moderoute.mapper.impl.SqliteVectorMapper;
-import com.challenger.moderoute.mapper.VectorMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,6 +59,11 @@ public class ApplicationBeans {
                     + "。请确认 lib/native/vec0.dll 存在（见 README「sqlite-vec 扩展」）", e);
         }
         return store;
+    }
+
+    @Bean
+    public CardMapper cardMapper(ModeRouteProperties properties, ObjectMapper mapper) {
+        return new SqliteCardMapper(properties, mapper);
     }
 
     @Bean

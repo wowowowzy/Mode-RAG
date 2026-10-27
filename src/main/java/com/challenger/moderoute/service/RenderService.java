@@ -3,8 +3,6 @@ package com.challenger.moderoute.service;
 import com.challenger.moderoute.entity.Card;
 import com.challenger.moderoute.entity.enums.CardDomain;
 
-import com.challenger.moderoute.entity.Card;
-import com.challenger.moderoute.entity.enums.CardDomain;
 
 public interface RenderService {
 

@@ -2,7 +2,6 @@ package com.challenger.moderoute.service;
 
 import com.challenger.moderoute.entity.ScoredCard;
 
-import com.challenger.moderoute.entity.ScoredCard;
 
 import java.util.List;
 

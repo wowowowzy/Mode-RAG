@@ -2,7 +2,6 @@ package com.challenger.moderoute;
 
 import com.challenger.moderoute.config.ModeRouteProperties;
 
-import com.challenger.moderoute.config.ModeRouteProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;

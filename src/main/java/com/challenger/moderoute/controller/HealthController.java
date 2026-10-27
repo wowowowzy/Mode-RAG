@@ -5,10 +5,6 @@ import com.challenger.moderoute.dto.HealthResponse;
 import com.challenger.moderoute.entity.CardLibrary;
 import com.challenger.moderoute.service.CardLibraryService;
 
-import com.challenger.moderoute.dto.HealthResponse;
-import com.challenger.moderoute.entity.CardLibrary;
-import com.challenger.moderoute.service.CardLibraryService;
-import com.challenger.moderoute.config.ModeRouteProperties;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;

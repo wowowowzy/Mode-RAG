@@ -2,7 +2,6 @@ package com.challenger.moderoute.entity;
 
 import com.challenger.moderoute.entity.enums.GateAction;
 
-import com.challenger.moderoute.entity.enums.GateAction;
 
 /**
  * 一次精判的结果：完整概率分布 + 门控动作。

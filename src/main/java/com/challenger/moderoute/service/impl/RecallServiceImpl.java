@@ -8,13 +8,6 @@ import com.challenger.moderoute.mapper.VectorMapper;
 import com.challenger.moderoute.service.CardLibraryService;
 import com.challenger.moderoute.service.RecallService;
 
-import com.challenger.moderoute.entity.CardLibrary;
-import com.challenger.moderoute.entity.ScoredCard;
-import com.challenger.moderoute.client.EmbeddingBackend;
-import com.challenger.moderoute.common.RecallException;
-import com.challenger.moderoute.mapper.VectorMapper;
-import com.challenger.moderoute.service.RecallService;
-import com.challenger.moderoute.service.CardLibraryService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

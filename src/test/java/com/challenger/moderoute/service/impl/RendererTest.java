@@ -6,8 +6,6 @@ import com.challenger.moderoute.entity.enums.CardDomain;
 import com.challenger.moderoute.service.impl.PlaceboRenderer;
 import com.challenger.moderoute.service.impl.SkeletonRenderer;
 
-import com.challenger.moderoute.entity.Card;
-import com.challenger.moderoute.entity.enums.CardDomain;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

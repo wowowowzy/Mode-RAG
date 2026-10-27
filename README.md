@@ -152,7 +152,7 @@ task ──embedding──> 余弦 top-k（内存扫描）
 
 | 配置 | 默认 | 说明 |
 | --- | --- | --- |
-| `moderoute.cards-dir` | `./data/cards` | 卡片目录，启动期加载为只读快照 |
+| `moderoute.cards-dir` | `./data/cards` | 卡片种子目录，启动时同步进 SQLite（版本不变则跳过） |
 | `moderoute.override-enabled` | `false` | 实验调试参数开关 |
 | `moderoute.recall.embedding` | `openai` | `openai`（任意 OpenAI 兼容 `/v1/embeddings`）或 `mock` |
 | `moderoute.recall.batch-size` | `10` | 单次 embedding 条数，网关限制 ≤20 |
@@ -174,6 +174,15 @@ task ──embedding──> 余弦 top-k（内存扫描）
 
 `data/cards/<domain>/*.yaml`，48 张 = 3 域 × 8 族 × 2 变体。字段：`id` / `domain` / `name` / `applicableWhen`（≤80 字，必须含「不适用于…」）/ `steps`（4–6）/ `failureModes`（2–4）/ `exitConditions`（1–3）/ `outputContract`。
 
+**存储方式**：YAML 是种子与编辑格式，运行时唯一读取源是 SQLite 的 `card` 表。
+
+1. 启动时按文件内容算出库版本（`libraryVersion`）；
+2. 与 `card_library` 表里已导入的版本比较，不同才在一个事务里整批替换 `card` 表；
+3. 然后从 `card` 表读出全部卡片，装成不可变快照（版本 + 列表 + id 索引）；
+4. 卡片目录缺失但库里已有数据时，直接用库里的版本启动（便于只带 `.db` 部署）。
+
+所以改卡流程仍是：编辑 YAML → 重启 → 版本变化 → 卡片重新导入 → 向量按新版本重算。好处是编辑可 diff、可评审，运行时读库、读快照，不碰文件 IO。
+
 加载期校验到字段级：任何一张卡不合规，服务直接拒绝启动（不带半份库对外服务）。
 
 库版本 = 卡片文件按相对路径排序、内容归一化（去 BOM、行尾统一 `\n`、去行尾空白）后拼接，取 SHA-256 前 12 位。归一化保证 Windows 与 Linux 算出同一个版本号。
@@ -187,6 +196,25 @@ java tools\GenerateTasks.java
 ```
 
 一行一任务：`taskId` / `domain` / `prompt` / `constraints` / `stances` / `acceptableCards` / `meta`。`acceptableCards` 是可接受集合，不是唯一正确答案。约束是 6 种结构化判定器（`capacity` / `precedence` / `mutex` / `window` / `assignment` / `ratio`），不用自由表达式。
+
+### 审计日志
+
+`var/audit/audit-YYYY-MM-DD.jsonl`，每请求一行。它不是业务日志，而是**决策的可复现证据**：
+
+| 字段 | 用途 |
+| --- | --- |
+| `traceId`、`ts`、`latencyMs`、`recallMs`、`decideMs` | 定位一次请求、拆开延迟来自哪一段 |
+| `libraryVersion`、`embeddingModel`、`vectorStore` | 固定当时的库与模型，判断结果能否跨版本比较 |
+| `taskSha256`、`taskLength` | 不存原文就能核对是不是同一个任务 |
+| `recall.candidates[{cardId,score}]` | 粗筛给了哪些候选、分数多少 |
+| `decision.optionOrder` / `probabilities` / `rawProbabilities` / `engineConfidence` / `temperature` | 精判的字母顺序、原始与标定后的概率、引擎自报置信度 |
+| `gate.action` / `cardId` / `confidence` | 门控最后做了什么，是注入、回退还是降级 |
+| `render.prompt` / `chars` / `estimatedTokens` | 实际注入的文本与预算占用 |
+| `degradedReason` | 降级原因（召回失败 / 精判失败 / 规则降级） |
+
+**没有「理由」字段，也不要加。** 决策模型不生成文本，给不出理由；可审计的证据就是概率分布本身。
+
+它的四个用途：复现（同任务同版本能重放出同一决策）、排障（为什么是这张卡、为什么没注入）、实验统计（注入率、置信度分档、跨域误选、延迟拆分）、以及事后核对（版本与模型是否被换过）。原文不入库，只留 hash，避免日志变成用户数据副本。
 
 ---
 
@@ -238,7 +266,7 @@ data/
 lib/native/vec0.dll sqlite-vec 扩展（gitignore，按 README 下载）
 tools/              任务集生成器 + 启动脚本
 var/                运行时产物（gitignore）
-  moderoute.db      向量库（WAL）
+  moderoute.db      卡片表 + 向量表（WAL）
   audit/            审计 JSONL
 docs/               SPEC.md / STATUS.md
 ```

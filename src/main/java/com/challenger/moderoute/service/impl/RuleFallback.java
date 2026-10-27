@@ -8,10 +8,6 @@ import com.challenger.moderoute.entity.Decision;
 import com.challenger.moderoute.entity.OptionSet;
 import com.challenger.moderoute.entity.ScoredCard;
 
-import com.challenger.moderoute.entity.Card;
-import com.challenger.moderoute.entity.CardLibrary;
-import com.challenger.moderoute.config.ModeRouteProperties;
-import com.challenger.moderoute.entity.ScoredCard;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;

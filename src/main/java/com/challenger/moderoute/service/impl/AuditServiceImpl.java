@@ -3,8 +3,6 @@ package com.challenger.moderoute.service.impl;
 import com.challenger.moderoute.config.ModeRouteProperties;
 import com.challenger.moderoute.service.AuditService;
 
-import com.challenger.moderoute.config.ModeRouteProperties;
-import com.challenger.moderoute.service.AuditService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

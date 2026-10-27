@@ -2,7 +2,6 @@ package com.challenger.moderoute.service.impl;
 
 import com.challenger.moderoute.entity.enums.CardDomain;
 
-import com.challenger.moderoute.entity.enums.CardDomain;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
