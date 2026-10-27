@@ -10,11 +10,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "moderoute")
 public class ModeRouteProperties {
 
-    /** 卡片目录，启动期一次性加载为只读快照。 */
+    /** 卡片种子目录，启动时同步进 SQLite。 */
     private String cardsDir = "./cards";
-
-    /** 实验调试参数开关，生产默认关闭。 */
-    private boolean overrideEnabled = false;
 
     private final Recall recall = new Recall();
     private final Decider decider = new Decider();
@@ -28,14 +25,6 @@ public class ModeRouteProperties {
 
     public void setCardsDir(String cardsDir) {
         this.cardsDir = cardsDir;
-    }
-
-    public boolean isOverrideEnabled() {
-        return overrideEnabled;
-    }
-
-    public void setOverrideEnabled(boolean overrideEnabled) {
-        this.overrideEnabled = overrideEnabled;
     }
 
     public Recall getRecall() {

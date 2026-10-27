@@ -15,8 +15,6 @@ server:
 
 moderoute:
   cards-dir: ${MODEROUTE_CARDS_DIR:./data/cards}
-  # 只在实验时打开；打开后 override 才生效。
-  override-enabled: ${MODEROUTE_OVERRIDE_ENABLED:false}
   recall:
     embedding: ${MODEROUTE_EMBEDDING:openai}
     base-url: ${OPENAI_BASE_URL:}

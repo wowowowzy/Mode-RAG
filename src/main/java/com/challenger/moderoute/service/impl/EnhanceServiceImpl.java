@@ -11,7 +11,6 @@ import com.challenger.moderoute.entity.Card;
 import com.challenger.moderoute.entity.CardLibrary;
 import com.challenger.moderoute.entity.Decision;
 import com.challenger.moderoute.entity.DecisionOutcome;
-import com.challenger.moderoute.entity.enums.CardDomain;
 import com.challenger.moderoute.entity.enums.GateAction;
 import com.challenger.moderoute.entity.OptionSet;
 import com.challenger.moderoute.entity.ScoredCard;
@@ -35,7 +34,6 @@ import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -87,24 +85,12 @@ public class EnhanceServiceImpl implements EnhanceService {
         }
 
         long start = System.nanoTime();
-        String overrideMode = null;
-        Outcome outcome;
-        long recallMs = -1;
-        long decideMs = -1;
-        EnhanceRequest.OverrideSpec override = request.override();
-        if (properties.isOverrideEnabled() && override != null) {
-            overrideMode = override.mode() == null ? "" : override.mode().toLowerCase(Locale.ROOT);
-            outcome = runOverride(overrideMode, override, task, topK, budgetTokens, library);
-        } else {
-            PipelineResult result = runPipeline(task, topK, budgetTokens, library);
-            outcome = result.outcome();
-            recallMs = result.recallMs();
-            decideMs = result.decideMs();
-        }
+        PipelineResult result = runPipeline(task, topK, budgetTokens, library);
+        Outcome outcome = result.outcome();
         long latencyMs = (System.nanoTime() - start) / 1_000_000L;
 
-        auditService.record(buildAudit(traceId, overrideMode, outcome, library, latencyMs,
-                recallMs, decideMs, topK, budgetTokens, task));
+        auditService.record(buildAudit(traceId, outcome, library, latencyMs,
+                result.recallMs(), result.decideMs(), topK, budgetTokens, task));
 
         return new EnhanceResponse(
                 outcome.prompt(),
@@ -180,70 +166,6 @@ public class EnhanceServiceImpl implements EnhanceService {
         }
     }
 
-    // ---------------------------------------------------------------- override
-
-    private Outcome runOverride(String mode, EnhanceRequest.OverrideSpec override, String task,
-                                int topK, int budgetTokens, CardLibrary library) {
-        return switch (mode) {
-            case "baseline" -> new Outcome(GateAction.FALLBACK, null, 0.0, "", null, null, "override:baseline");
-            case "forcecard" -> forceCard(override.cardId(), budgetTokens, library);
-            case "randomcard" -> randomCard(override.seed(), task, budgetTokens, library);
-            case "placebo" -> placebo(task, topK, budgetTokens, library);
-            default -> throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_OVERRIDE",
-                    "override.mode 只能是 forceCard / placebo / baseline / randomCard，实际为 " + mode);
-        };
-    }
-
-    private Outcome forceCard(String cardId, int budgetTokens, CardLibrary library) {
-        if (cardId == null || cardId.isBlank()) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_OVERRIDE", "override.mode=forceCard 时必须提供 cardId");
-        }
-        Card card = library.byId().get(cardId.trim());
-        if (card == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "UNKNOWN_CARD", "卡片不存在: " + cardId);
-        }
-        return new Outcome(GateAction.INJECT, card.id(), 1.0,
-                renderService.render(card, budgetTokens), null, null, "override:forceCard");
-    }
-
-    private Outcome randomCard(Integer seed, String task, int budgetTokens, CardLibrary library) {
-        int actualSeed = seed == null ? 0 : seed;
-        byte[] digest = sha256(actualSeed + "|" + task);
-        int index = Math.floorMod(toInt(digest), library.cards().size());
-        Card card = library.cards().get(index);
-        return new Outcome(GateAction.INJECT, card.id(), 1.0,
-                renderService.render(card, budgetTokens), null, null, "override:randomCard");
-    }
-
-    private Outcome placebo(String task, int topK, int budgetTokens, CardLibrary library) {
-        int targetChars = 0;
-        CardDomain domain = CardDomain.GENERAL;
-        try {
-            PipelineResult normal = runPipeline(task, topK, budgetTokens, library);
-            if (!normal.outcome().prompt().isEmpty()) {
-                targetChars = normal.outcome().prompt().length();
-                if (normal.outcome().cardId() != null) {
-                    domain = library.byId().get(normal.outcome().cardId()).domain();
-                }
-            }
-        } catch (RuntimeException e) {
-            log.debug("placebo 目标长度计算失败，改用均值: {}", e.getMessage());
-        }
-        if (targetChars <= 0) {
-            targetChars = averageRenderedLength(library, budgetTokens);
-        }
-        return new Outcome(GateAction.INJECT, null, 1.0,
-                renderService.placebo(domain, targetChars), null, null, "override:placebo");
-    }
-
-    private int averageRenderedLength(CardLibrary library, int budgetTokens) {
-        int total = 0;
-        for (Card card : library.cards()) {
-            total += renderService.render(card, budgetTokens).length();
-        }
-        return total / library.cards().size();
-    }
-
     // ---------------------------------------------------------------- 校验
 
     private void validateTask(String task) {
@@ -297,7 +219,7 @@ public class EnhanceServiceImpl implements EnhanceService {
 
     // ---------------------------------------------------------------- 审计
 
-    private Map<String, Object> buildAudit(String traceId, String overrideMode, Outcome outcome,
+    private Map<String, Object> buildAudit(String traceId, Outcome outcome,
                                            CardLibrary library, long latencyMs, long recallMs, long decideMs,
                                            int topK, int budgetTokens, String task) {
         Map<String, Object> event = new LinkedHashMap<>();
@@ -316,9 +238,6 @@ public class EnhanceServiceImpl implements EnhanceService {
         }
         if (decideMs >= 0) {
             event.put("decideMs", decideMs);
-        }
-        if (overrideMode != null && !overrideMode.isEmpty()) {
-            event.put("override", overrideMode);
         }
 
         List<Map<String, Object>> candidates = new ArrayList<>();
@@ -395,14 +314,6 @@ public class EnhanceServiceImpl implements EnhanceService {
         } catch (Exception e) {
             throw new IllegalStateException("JVM 缺少 SHA-256", e);
         }
-    }
-
-    private static int toInt(byte[] bytes) {
-        int value = 0;
-        for (int i = 0; i < 4; i++) {
-            value = (value << 8) | (bytes[i] & 0xFF);
-        }
-        return value;
     }
 
     private record PipelineResult(Outcome outcome, long recallMs, long decideMs) {

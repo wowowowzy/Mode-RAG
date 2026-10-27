@@ -11,10 +11,7 @@ public record EnhanceRequest(
         Options options,
 
         @Schema(description = "调用方链路标识，可选；缺省时由服务生成", example = "trace-001")
-        String traceId,
-
-        @Schema(hidden = true)
-        OverrideSpec override) {
+        String traceId) {
 
     public record Options(
             @Schema(description = "粗筛候选数，3–26，默认 8", example = "8")
@@ -22,12 +19,5 @@ public record EnhanceRequest(
 
             @Schema(description = "注入文本的 token 预算，默认 400", example = "400")
             Integer budgetTokens) {
-    }
-
-    @Schema(hidden = true)
-    public record OverrideSpec(
-            @Schema(hidden = true) String mode,
-            @Schema(hidden = true) String cardId,
-            @Schema(hidden = true) Integer seed) {
     }
 }

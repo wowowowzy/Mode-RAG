@@ -19,7 +19,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(properties = {
         "moderoute.recall.embedding=mock",
         "moderoute.decider.provider=mock",
-        "moderoute.override-enabled=true",
         "moderoute.audit.dir=target/test-audit",
         "moderoute.recall.sqlite-path=target/test-vectors-api.db",
         "moderoute.recall.extension-path=lib/native/vec0.dll",
@@ -108,49 +107,6 @@ class EnhanceApiTest {
                 .andExpect(status().isBadRequest())
                 .andReturn().getResponse().getContentAsString();
         assertThat(mapper.readTree(body).path("error").path("code").asText()).isEqualTo("INVALID_JSON");
-    }
-
-    @Test
-    void 指定卡覆盖生成该卡渲染文本() throws Exception {
-        JsonNode body = enhance("{\"task\":\"任意任务\",\"override\":{\"mode\":\"forceCard\","
-                + "\"cardId\":\"planning-capacity-first\"}}");
-        assertThat(body.path("meta").path("action").asText()).isEqualTo("INJECT");
-        assertThat(body.path("meta").path("cardId").asText()).isEqualTo("planning-capacity-first");
-        assertThat(body.path("prompt").asText()).contains("【推理骨架：容量先行排布】");
-    }
-
-    @Test
-    void 未知卡返回400() throws Exception {
-        String body = mockMvc.perform(post("/v1/enhance")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"task\":\"任意任务\",\"override\":{\"mode\":\"forceCard\",\"cardId\":\"nope-1\"}}"))
-                .andExpect(status().isBadRequest())
-                .andReturn().getResponse().getContentAsString();
-        assertThat(mapper.readTree(body).path("error").path("code").asText()).isEqualTo("UNKNOWN_CARD");
-    }
-
-    @Test
-    void baseline返回空串而不是null() throws Exception {
-        JsonNode body = enhance("{\"task\":\"任意任务\",\"override\":{\"mode\":\"baseline\"}}");
-        assertThat(body.path("prompt").isNull()).isFalse();
-        assertThat(body.path("prompt").asText()).isEmpty();
-        assertThat(body.path("meta").path("action").asText()).isEqualTo("FALLBACK");
-    }
-
-    @Test
-    void placebo注入等长通用骨架() throws Exception {
-        JsonNode body = enhance("{\"task\":\"为三条产线排布五张订单\",\"override\":{\"mode\":\"placebo\"}}");
-        assertThat(body.path("meta").path("action").asText()).isEqualTo("INJECT");
-        assertThat(body.path("prompt").asText()).contains("通用分步推进");
-        assertThat(body.path("meta").path("cardId").isNull()).isTrue();
-    }
-
-    @Test
-    void randomCard按种子确定() throws Exception {
-        String request = "{\"task\":\"为三条产线排布五张订单\",\"override\":{\"mode\":\"randomCard\",\"seed\":42}}";
-        String first = enhance(request).path("meta").path("cardId").asText();
-        String second = enhance(request).path("meta").path("cardId").asText();
-        assertThat(second).isEqualTo(first);
     }
 
     private JsonNode enhance(String json) throws Exception {

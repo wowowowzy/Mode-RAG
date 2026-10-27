@@ -3,7 +3,6 @@ package com.challenger.moderoute.service.impl;
 import com.challenger.moderoute.common.util.TokenEstimator;
 import com.challenger.moderoute.entity.Card;
 import com.challenger.moderoute.entity.enums.CardDomain;
-import com.challenger.moderoute.service.impl.PlaceboRenderer;
 import com.challenger.moderoute.service.impl.SkeletonRenderer;
 
 import org.junit.jupiter.api.Test;
@@ -15,7 +14,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 class RendererTest {
 
     private final SkeletonRenderer renderer = new SkeletonRenderer();
-    private final PlaceboRenderer placeboRenderer = new PlaceboRenderer();
 
     private Card card() {
         return new Card("planning-demo", CardDomain.PLANNING, "演示骨架",
@@ -53,16 +51,6 @@ class RendererTest {
     @Test
     void 渲染是确定性的() {
         assertThat(renderer.render(card(), 400)).isEqualTo(renderer.render(card(), 400));
-    }
-
-    @Test
-    void placebo等长且内容通用() {
-        String base = renderer.render(card(), 400);
-        String placebo = placeboRenderer.render(CardDomain.PLANNING, base.length());
-
-        assertThat(placebo.length()).isBetween(base.length() - 40, base.length() + 40);
-        assertThat(placebo).doesNotContain("统计可用工时").contains("通用分步推进");
-        assertThat(placebo).isEqualTo(placeboRenderer.render(CardDomain.PLANNING, base.length()));
     }
 
     @Test

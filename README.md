@@ -90,7 +90,6 @@ java -jar target\moderoute-1.0.0.jar `
 | 400 | `INVALID_TASK` | task 缺失或空白 |
 | 400 | `INVALID_OPTIONS` | topK 不在 3–26，budgetTokens 不在 64–2000 |
 | 400 | `INVALID_JSON` | 请求体不是合法 JSON |
-| 400 | `INVALID_OVERRIDE` / `UNKNOWN_CARD` | 调试参数非法 |
 | 422 | `TASK_TOO_LONG` | task 超过 4000 字 |
 | 503 | `LIBRARY_NOT_LOADED` | 模式库未加载 |
 
@@ -100,18 +99,7 @@ java -jar target\moderoute-1.0.0.jar `
 - `GET /v1/cards`：列出模式库（id / domain / name / applicableWhen）
 - OpenAPI：`/v3/api-docs`、`/swagger-ui.html`
 
-### 调试参数 `override`
-
-生产默认关闭（`moderoute.override-enabled=false`），且不出现在 OpenAPI 文档里。开启后所有实验臂走同一个接口：
-
-```json
-{ "override": { "mode": "forceCard|placebo|baseline|randomCard", "cardId": "...", "seed": 42 } }
-```
-
-- `baseline`：空 prompt，`action=FALLBACK`
-- `forceCard`：强制注入指定卡
-- `randomCard`：由 `seed + 任务` 的 SHA-256 确定选卡，可复现
-- `placebo`：同结构、内容通用的假骨架，长度对齐「本应注入的骨架」
+接口只做一件事：给定任务，让系统自己检索并判断该不该注入哪张卡。**没有调试参数**，也不接受指定卡片——要指定的场景（例如对照实验）由调用方在外部自己构造 baseline，不进入本服务。
 
 ---
 
@@ -153,7 +141,6 @@ task ──embedding──> 余弦 top-k（内存扫描）
 | 配置 | 默认 | 说明 |
 | --- | --- | --- |
 | `moderoute.cards-dir` | `./data/cards` | 卡片种子目录，启动时同步进 SQLite（版本不变则跳过） |
-| `moderoute.override-enabled` | `false` | 实验调试参数开关 |
 | `moderoute.recall.embedding` | `openai` | `openai`（任意 OpenAI 兼容 `/v1/embeddings`）或 `mock` |
 | `moderoute.recall.batch-size` | `10` | 单次 embedding 条数，网关限制 ≤20 |
 | `moderoute.recall.sqlite-path` | `./var/moderoute.db` | 向量库位置；删掉即重算 |
@@ -187,15 +174,10 @@ task ──embedding──> 余弦 top-k（内存扫描）
 
 库版本 = 卡片文件按相对路径排序、内容归一化（去 BOM、行尾统一 `\n`、去行尾空白）后拼接，取 SHA-256 前 12 位。归一化保证 Windows 与 Linux 算出同一个版本号。
 
-### 任务集
+### 评测
 
-`data/tasks/tasks.jsonl`，200 条（planning 120 + debate 80；val 60 / test 140），由 `tools/GenerateTasks.java` 确定性生成：
+本仓库**不包含**任务集、任务生成器与实验脚本。评测放在独立项目：那边生成任务、调执行模型、判定与出报告；本项目只负责「给定任务，返回该注入的骨架」。两边通过 HTTP 契约与 `meta.libraryVersion` 对齐。
 
-```powershell
-java tools\GenerateTasks.java
-```
-
-一行一任务：`taskId` / `domain` / `prompt` / `constraints` / `stances` / `acceptableCards` / `meta`。`acceptableCards` 是可接受集合，不是唯一正确答案。约束是 6 种结构化判定器（`capacity` / `precedence` / `mutex` / `window` / `assignment` / `ratio`），不用自由表达式。
 
 ### 审计日志
 
@@ -225,7 +207,6 @@ java tools\GenerateTasks.java
 - **字母按 cardId 字典序映射**，不按召回分数：分数会随 embedding 版本变化，按分数排会破坏可复现性。
 - **精判只看 `applicableWhen`**：决策模型有上下文稀释问题，`steps` / `failureModes` 不进精判输入。
 - **置信度必须自行重标定**：原始 softmax ECE 很差；温度只在验证集上拟合，测试集只报告。
-- **placebo 组必须有**：「注入了针对性骨架」与「prompt 变长了」必须分开，`ours - placebo` 才是真贡献。
 - **48 张 / 8 族 × 2 变体**：同族两张是受控近邻（全量 vs 增量、构造 vs 修复），top-8 保留率 16.7%，级联召回才有意义。
 - **向量存 SQLite（WAL），检索走 sqlite-vec**：普通表存 float32 BLOB，距离用 `vec_distance_cosine()`；不用 `vec0` 虚拟表，因为它的维度建表即定死，换 embedding 模型就要迁移。实测 48×1024 的 top-8 约 258 µs，仍是端到端 0.08% 量级。
 - **删除即重算**：`(库版本, 模型, 卡片集合, 维度)` 任一不匹配都视为未就绪，整批重算；删掉 `var/moderoute.db` 重启，响应逐字节不变。
@@ -238,9 +219,8 @@ java tools\GenerateTasks.java
 2. **Spring AI 只用 `spring-ai-model` 抽象**，OpenAI 兼容传输层自己写（`OpenAiCompatibleEmbeddingModel`）。若引入 `spring-ai-openai`，会把 chat 类一起带进依赖树，「不碰执行模型」就只能靠承诺、不能靠依赖树。换后端仍只改配置。
 3. **召回向量只用 `applicableWhen` 的正面半句**。负例是给「排除」用的，混进相似度会变成正向信号；精判仍看到完整字段。
 4. **输出格式示例压缩成字段名清单**，让完整骨架（含失败模式与退出条件）能落在默认 400 token 内。裁剪顺序固定：先丢格式示例，再丢失败模式，最后硬截断。
-5. **placebo 长度对齐「本应注入的骨架长度」**，而不是固定长度。若本次没有合适卡，则对齐全库渲染长度的均值。
-6. **卡片与任务集由同一作者（AI）产出**。「写卡的人不看任务生成器模板」这条纪律在单人 + AI 的开发形态下只能部分执行：任务文本由生成器模板产出、卡片在结构确定后撰写，但无法证明作者隔离。这一点必须写进实验报告的局限章节，不能含糊过去。
-7. **向量落 SQLite，偏离 SPEC「不引入数据库」**。SPEC §3 明确不引数据库；按实际取舍改为 SQLite + sqlite-vec（WAL），运行路径只有这一条。代价是引入 `sqlite-jdbc` 与一个原生扩展（`vec0.dll`，缺失则拒绝启动），数据库只存**派生向量**，不存会话、不存卡片，删掉即重算，接口契约与决策结果不变。
+5. **卡片与任务集由同一作者（AI）产出**。「写卡的人不看任务生成器模板」这条纪律在单人 + AI 的开发形态下只能部分执行：任务文本由生成器模板产出、卡片在结构确定后撰写，但无法证明作者隔离。这一点必须写进实验报告的局限章节，不能含糊过去。
+6. **向量落 SQLite，偏离 SPEC「不引入数据库」**。SPEC §3 明确不引数据库；按实际取舍改为 SQLite + sqlite-vec（WAL），运行路径只有这一条。代价是引入 `sqlite-jdbc` 与一个原生扩展（`vec0.dll`，缺失则拒绝启动），数据库只存**派生向量**，不存会话、不存卡片，删掉即重算，接口契约与决策结果不变。
 
 ---
 
@@ -262,9 +242,8 @@ src/main/java/com/challenger/moderoute/
   config/            配置与 Bean 装配
 data/
   cards/            48 张模式卡（3 域 × 16）
-  tasks/            任务集
 lib/native/vec0.dll sqlite-vec 扩展（gitignore，按 README 下载）
-tools/              任务集生成器 + 启动脚本
+tools/              启动脚本（start-jev / run）
 var/                运行时产物（gitignore）
   moderoute.db      卡片表 + 向量表（WAL）
   audit/            审计 JSONL
