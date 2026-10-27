@@ -32,7 +32,7 @@ moderoute:
     provider: ${MODEROUTE_DECIDER:jev-local}
     base-url: ${JEV_BASE_URL:http://127.0.0.1:8765}
     api-key: ${JEV_API_KEY:}
-    timeout-ms: ${MODEROUTE_DECIDER_TIMEOUT_MS:5000}
+    timeout-ms: ${MODEROUTE_DECIDER_TIMEOUT_MS:15000}
     connect-timeout-ms: 1000
     # 我们自己的温度缩放，只在验证集上拟合；引擎自带温度不在这里。
     temperature: ${MODEROUTE_TEMPERATURE:1.0}

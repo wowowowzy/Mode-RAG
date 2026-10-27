@@ -1,4 +1,4 @@
-# 冒烟：健康检查、库列表、一次真实增强请求。结果写入 runs/smoke-response.json。
+﻿# 冒烟：健康检查、库列表、一次真实增强请求。结果写入 runs/smoke-response.json。
 Set-Location (Split-Path -Parent $PSScriptRoot)
 $base = "http://127.0.0.1:18080"
 
