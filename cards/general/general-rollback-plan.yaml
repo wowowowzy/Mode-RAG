@@ -1,0 +1,16 @@
+id: general-rollback-plan
+domain: general
+name: 回退路径设计
+applicableWhen: 高风险变更上线前、需要预先设计回退路径的任务；不适用于可随时中止的试验性工作。
+steps:
+  - 明确变更的范围与影响面
+  - 确定回退触发条件与判定人
+  - 准备回退所需的数据与版本
+  - 估算回退耗时与数据丢失风险
+  - 在变更前验证回退路径可用
+failureModes:
+  - 只写回退步骤不验证可用性
+  - 触发条件模糊导致迟迟不决策
+exitConditions:
+  - 若回退会造成不可接受的数据损失，说明该变更不可逆，需先拆分变更
+outputContract: 分节输出 scope / triggers / owner / steps / cost / verification

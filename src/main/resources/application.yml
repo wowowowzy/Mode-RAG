@@ -1,0 +1,60 @@
+spring:
+  application:
+    name: moderoute
+  config:
+    import: optional:file:./.env.local[.properties]
+  jackson:
+    default-property-inclusion: always
+  mvc:
+    problemdetails:
+      enabled: false
+
+server:
+  port: 18080
+  shutdown: graceful
+
+moderoute:
+  cards-dir: ${MODEROUTE_CARDS_DIR:./cards}
+  # 只在实验时打开；打开后 override 才生效。
+  override-enabled: ${MODEROUTE_OVERRIDE_ENABLED:false}
+  recall:
+    embedding: ${MODEROUTE_EMBEDDING:openai}
+    base-url: ${OPENAI_BASE_URL:}
+    api-key: ${OPENAI_API_KEY:}
+    model: ${OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
+    cache-dir: ${MODEROUTE_VECTOR_CACHE:./runs/.vectors}
+    timeout-ms: ${MODEROUTE_EMBEDDING_TIMEOUT_MS:15000}
+    strip-negative-clause: true
+    mock-dimension: 256
+    # 网关限制单次 batch ≤ 20，分片调用。
+    batch-size: 10
+  decider:
+    provider: ${MODEROUTE_DECIDER:jev-local}
+    base-url: ${JEV_BASE_URL:http://127.0.0.1:8765}
+    api-key: ${JEV_API_KEY:}
+    timeout-ms: ${MODEROUTE_DECIDER_TIMEOUT_MS:5000}
+    connect-timeout-ms: 1000
+    # 我们自己的温度缩放，只在验证集上拟合；引擎自带温度不在这里。
+    temperature: ${MODEROUTE_TEMPERATURE:1.0}
+    rule-min-score: 0.02
+  render:
+    default-budget-tokens: 400
+    min-budget-tokens: 64
+    max-budget-tokens: 2000
+  gate:
+    # 默认 0：注入与否完全由「None 是否胜出」决定，不做阈值工程。
+    inject-floor: ${MODEROUTE_INJECT_FLOOR:0.0}
+  audit:
+    enabled: ${MODEROUTE_AUDIT:true}
+    dir: ${MODEROUTE_AUDIT_DIR:./runs/audit}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    root: WARN
+    com.challenger.moderoute: INFO

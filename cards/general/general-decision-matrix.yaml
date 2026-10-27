@@ -1,0 +1,16 @@
+id: general-decision-matrix
+domain: general
+name: 决策矩阵
+applicableWhen: 多个可选方案需要按多个维度比较取舍的决策任务；不适用于只有一个可行选项的情形。
+steps:
+  - 列出候选方案
+  - 确定评价维度与权重
+  - 逐项打分并写出依据
+  - 检查权重变动是否改变结论
+  - 给出推荐与前提
+failureModes:
+  - 维度重复计分
+  - 权重事后调整以迎合偏好
+exitConditions:
+  - 若前两名差距小于权重误差范围，说明两者等价，改为按执行成本选择
+outputContract: 分节输出 criteria / scores / sensitivity / recommendation

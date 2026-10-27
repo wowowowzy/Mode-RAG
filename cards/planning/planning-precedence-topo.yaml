@@ -1,0 +1,16 @@
+id: planning-precedence-topo
+domain: planning
+name: 依赖拓扑排序
+applicableWhen: 订单之间存在前后依赖、必须按拓扑顺序安排开工的任务；不适用于互相独立的并行订单。
+steps:
+  - 列出所有依赖边并检查是否有环
+  - 找出入度为零的订单作为第一批
+  - 每完成一批就释放其后继
+  - 后继只能排在前驱完成之后的时段
+  - 输出顺序并核对每条依赖
+failureModes:
+  - 存在环却直接按经验排序
+  - 把依赖当成同一天即可，忽略具体小时
+exitConditions:
+  - 若依赖图有环，立即停止并指出环上的订单，不要输出看似合理的顺序
+outputContract: 输出 assignments 与 verification，依赖约束逐条给出前置完成时刻

@@ -1,0 +1,16 @@
+id: planning-balance-load
+domain: planning
+name: 负荷均衡
+applicableWhen: 要求各产线每日负荷尽量均衡、避免个别产线过载的排产任务；不适用于交期极紧、必须先保完工时间的场景。
+steps:
+  - 计算各产线每日的目标负荷
+  - 按当前负荷从低到高选择落点
+  - 大单优先放到负荷最低的产线
+  - 每次分配后更新负荷并重新排序
+  - 输出负荷分布与极差
+failureModes:
+  - 均衡负荷时把订单排出时间窗
+  - 只均衡总量不均衡每日负荷
+exitConditions:
+  - 若均衡要求与时间窗冲突，明确指出冲突订单并说明保时间窗优先
+outputContract: 输出 assignments 与 verification；verification 给出各产线每日负荷与极差

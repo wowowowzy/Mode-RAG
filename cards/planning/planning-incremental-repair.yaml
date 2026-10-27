@@ -1,0 +1,16 @@
+id: planning-incremental-repair
+domain: planning
+name: 增量修复
+applicableWhen: 已有可用排程，只需插入或调整少数订单的增量修复任务；不适用于原排程已整体失效的情况。
+steps:
+  - 锁定不涉及变动的订单分配
+  - 找出可容纳新订单的产线与日期空档
+  - 优先占用不引起连锁搬移的空档
+  - 若必须搬移，只搬同一产线上受影响的最小连续片段
+  - 输出变更清单并标注未受影响的分配
+failureModes:
+  - 为插入一张订单把整份排程推倒重来
+  - 变更后没有复核被搬移片段的约束
+exitConditions:
+  - 若所有空档都放不下且搬移会破坏已确认的硬约束，停止并报告需要人工决策的冲突点
+outputContract: 输出 assignments 与 verification；verification 中说明哪些分配相对原排程发生了搬移

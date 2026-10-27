@@ -1,0 +1,16 @@
+id: debate-red-team
+domain: debate
+name: 红队攻击
+applicableWhen: 需要主动寻找某一方案致命弱点的评估任务；不适用于尚未形成明确方案的空泛讨论。
+steps:
+  - 明确被攻击方案的核心主张
+  - 假设它已经失败，倒推最可能的失败路径
+  - 找出能让该路径成立的最小条件
+  - 检查这些条件在当前信息下是否现实
+  - 按严重程度排序弱点
+failureModes:
+  - 攻击执行细节而放过核心假设
+  - 把低概率风险当成必然失败
+exitConditions:
+  - 若所有弱点都只是低概率尾部风险，说明方案整体仍站得住，不为否定而否定
+outputContract: 输出 debate_v1，objections 按严重程度排序，concessions 保留方案成立的部分

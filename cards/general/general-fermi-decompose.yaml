@@ -1,0 +1,16 @@
+id: general-fermi-decompose
+domain: general
+name: 量级拆解估算
+applicableWhen: 缺少直接数据、需要估算数量级的任务；不适用于有精确数据可直接查询的场景。
+steps:
+  - 把目标量拆成可独立估算的因子
+  - 为每个因子给出保守区间
+  - 相乘得到量级范围
+  - 找出对结果影响最大的因子
+  - 用另一条独立路径交叉验证
+failureModes:
+  - 只给单点估计不给区间
+  - 各因子重复计算同一部分
+exitConditions:
+  - 若两条独立路径结果相差超过一个数量级，说明拆分有误，停止给结论并重新拆解
+outputContract: 分节输出 factors / ranges / result_range / dominant_factor / cross_check

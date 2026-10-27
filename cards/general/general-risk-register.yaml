@@ -1,0 +1,16 @@
+id: general-risk-register
+domain: general
+name: 风险登记排序
+applicableWhen: 需要系统登记风险、量化等级并排定处置顺序的管理任务；不适用于单次低影响的小决策。
+steps:
+  - 逐条登记风险事件
+  - 估计发生概率与影响
+  - 计算等级并排序
+  - 为每条指定规避、转移、减轻或接受
+  - 指定责任人与复核时点
+failureModes:
+  - 概率与影响用同一把尺子衡量
+  - 登记后没有处置动作
+exitConditions:
+  - 若风险等级依赖无法验证的概率估计，标注为待验证而不是直接排优先级
+outputContract: 表格输出 risk / probability / impact / level / response / owner / review_at

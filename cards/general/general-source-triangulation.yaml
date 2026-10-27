@@ -1,0 +1,16 @@
+id: general-source-triangulation
+domain: general
+name: 多源三角验证
+applicableWhen: 多个来源说法不一致、需要判断可信度的信息核实任务；不适用于只有单一权威来源的查询。
+steps:
+  - 列出各来源的主张与出处
+  - 判断来源之间是否独立
+  - 找出相互印证与相互矛盾的点
+  - 优先采信独立且可核验的来源
+  - 给出当前可信结论与保留意见
+failureModes:
+  - 把同源转载当成多方印证
+  - 用来源权威性替代具体证据
+exitConditions:
+  - 若所有来源都同源或无法核验，说明无法确认，不给确定结论
+outputContract: 分节输出 claims / sources / independence / conflicts / assessment

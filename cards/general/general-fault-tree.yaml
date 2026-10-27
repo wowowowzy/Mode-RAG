@@ -1,0 +1,16 @@
+id: general-fault-tree
+domain: general
+name: 故障树分解
+applicableWhen: 复杂系统故障、需要自顶向下分解失效路径的诊断任务；不适用于单点且显而易见的故障。
+steps:
+  - 定义顶层的失效事件
+  - 向下分解为必要的子事件组合
+  - 标出每个子事件的可观测征兆
+  - 从最可能的分支向下验证
+  - 记录已排除的分支
+failureModes:
+  - 分解时漏掉共因失效
+  - 只沿一条分支排查，忽略并联路径
+exitConditions:
+  - 若所有分支都被排除，说明顶层事件定义有误，回到定义步骤重来而不是硬凑原因
+outputContract: 分节输出 top_event / branches / evidence / excluded / conclusion

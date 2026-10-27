@@ -1,0 +1,16 @@
+id: debate-decision-threshold
+domain: debate
+name: 行动门槛判断
+applicableWhen: 需要判断支持某一方的证据是否已达到行动门槛的评估；不适用于纯学术比较、不涉及决策的讨论。
+steps:
+  - 明确该决策的错误代价与门槛
+  - 估计支持某一方的证据强度
+  - 比较证据强度与行动门槛
+  - 检查是否存在「再等等」的期权价值
+  - 给出行动或继续观察的建议
+failureModes:
+  - 用「有一定道理」替代达到门槛
+  - 忽略等待本身的机会成本
+exitConditions:
+  - 若证据强度明显低于门槛，建议继续观察并说明还需要什么证据
+outputContract: 输出 debate_v1，verdict 明确给出「行动 / 继续观察」及对应门槛

@@ -1,0 +1,16 @@
+id: planning-makespan-first
+domain: planning
+name: 总工期优先
+applicableWhen: 目标是尽快完成全部订单、优先压缩总完工时间的排产任务；不适用于更在意各产线负荷均衡的场景。
+steps:
+  - 找出决定总完工时间的关键订单链
+  - 优先保证关键链上不停工
+  - 把非关键订单填入关键链的空档
+  - 每轮检查总完工时间是否还能缩短
+  - 输出总完工时间与关键链
+failureModes:
+  - 只压单张订单时长却不看关键链
+  - 为缩短总工期把所有订单堆到同一产线
+exitConditions:
+  - 若继续压缩需要牺牲已声明为硬约束的条件，停止并说明当前总工期已接近可达下界
+outputContract: 输出 assignments 与 verification；verification 给出 makespan 与关键链订单

@@ -1,0 +1,16 @@
+id: planning-feasibility-lower-bound
+domain: planning
+name: 可行性下界先验
+applicableWhen: 需要先判断排产是否可行、再决定是否求解的规划任务；不适用于约束宽松、显然有解的简单分配。
+steps:
+  - 计算总需求工时与总可用工时
+  - 计算单张订单的最小占用下界
+  - 检查最紧时间窗内的容量是否够
+  - 若下界已超过上限，直接判定不可行
+  - 下界通过后再进入具体排布
+failureModes:
+  - 用总量比较替代逐窗口比较，漏掉局部瓶颈
+  - 下界通过就断言一定可行
+exitConditions:
+  - 任一下界超过上限时立即停止，输出不可行结论与瓶颈位置，不要继续尝试排布
+outputContract: 输出 assignments 与 verification；不可行时 assignments 为空，verification 给出下界计算与瓶颈

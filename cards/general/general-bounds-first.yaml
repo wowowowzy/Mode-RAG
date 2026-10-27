@@ -1,0 +1,16 @@
+id: general-bounds-first
+domain: general
+name: 上下界先行
+applicableWhen: 需要先确定答案上下界、再逐步收敛的估算或推理任务；不适用于边界本身无意义的开放问题。
+steps:
+  - 找出显然成立的上下界
+  - 检查边界是否已足够回答任务
+  - 用额外信息收紧更宽的一侧
+  - 重复直到区间足够窄
+  - 报告最终区间与置信程度
+failureModes:
+  - 一开始就追求精确值而忽略边界
+  - 用未经验证的假设收紧边界
+exitConditions:
+  - 若区间无法进一步收紧且仍跨过决策阈值，说明信息不足，输出区间而非单点
+outputContract: 分节输出 lower / upper / tighten_steps / final_range / confidence

@@ -1,0 +1,72 @@
+package com.challenger.moderoute.decide;
+
+import com.challenger.moderoute.card.Card;
+import com.challenger.moderoute.card.CardLibrary;
+import com.challenger.moderoute.config.ModeRouteProperties;
+import com.challenger.moderoute.recall.ScoredCard;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * 规则降级：embedding 或精判不可用时，用字符二元组相似度选卡。
+ * 结果标记为 DEGRADED，不伪装成正常召回。
+ */
+@Service
+public class RuleFallback {
+
+    private static final int DEFAULT_CANDIDATES = 8;
+    private static final int MAX_CANDIDATES = 25;
+
+    private final double minScore;
+    private final boolean stripNegativeClause;
+
+    public RuleFallback(ModeRouteProperties properties) {
+        this.minScore = properties.getDecider().getRuleMinScore();
+        this.stripNegativeClause = properties.getRecall().isStripNegativeClause();
+    }
+
+    public Decision decide(String task, CardLibrary library, int maxCandidates) {
+        List<ScoredCard> scored = new ArrayList<>(library.cards().size());
+        for (Card card : library.cards()) {
+            double score = TextSimilarity.bigramCosine(task, card.recallText(stripNegativeClause));
+            scored.add(new ScoredCard(card.id(), score));
+        }
+        scored.sort(Comparator.comparingDouble(ScoredCard::score).reversed()
+                .thenComparing(ScoredCard::cardId));
+
+        int limit = Math.max(1, Math.min(maxCandidates <= 0 ? DEFAULT_CANDIDATES : maxCandidates, MAX_CANDIDATES));
+        List<ScoredCard> top = scored.subList(0, Math.min(limit, scored.size()));
+        OptionSet options = OptionSet.ofCandidates(top);
+        Map<String, Double> byId = new HashMap<>();
+        top.forEach(item -> byId.put(item.cardId(), item.score()));
+
+        double[] probabilities = new double[options.size()];
+        double best = 0;
+        double sum = 0;
+        for (int i = 0; i < options.size(); i++) {
+            OptionSet.Option option = options.options().get(i);
+            if (option.isNone()) {
+                continue;
+            }
+            double weight = Math.max(0, byId.getOrDefault(option.cardId(), 0.0));
+            probabilities[i] = weight;
+            best = Math.max(best, weight);
+            sum += weight;
+        }
+
+        if (best < minScore || sum <= 0) {
+            probabilities = new double[options.size()];
+            probabilities[options.size() - 1] = 1.0;
+        } else {
+            for (int i = 0; i < probabilities.length; i++) {
+                probabilities[i] = probabilities[i] / sum;
+            }
+        }
+        return new Decision("rule", options, probabilities, probabilities, 1.0, null);
+    }
+}

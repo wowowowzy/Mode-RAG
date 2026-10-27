@@ -1,0 +1,16 @@
+id: planning-window-first
+domain: planning
+name: 时间窗先行排布
+applicableWhen: 订单带最晚完成日、需要先保时间窗再压工期的排产任务；不适用于没有截止日的纯容量分配。
+steps:
+  - 按最晚完成日升序排列订单
+  - 为每张订单划定可用的作业日区间
+  - 在区间内优先选择余量最紧的产线
+  - 逐单向前回填，保证后续订单仍有可行窗口
+  - 全部排完后检查是否有订单被挤出窗口
+failureModes:
+  - 只顾当前订单最早开工，把后续订单的窗口堵死
+  - 把最晚完成日误当成开工日
+exitConditions:
+  - 若某订单窗口内所有产线余量之和不足其工时，报告该单不可行并列出具体缺口
+outputContract: 输出 assignments 与 verification，verification 需说明每条时间窗约束是否满足

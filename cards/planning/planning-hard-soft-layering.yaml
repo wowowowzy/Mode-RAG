@@ -1,0 +1,16 @@
+id: planning-hard-soft-layering
+domain: planning
+name: 硬软约束分层
+applicableWhen: 任务同时给出硬约束与软偏好、需要先保硬约束再优化偏好的规划；不适用于所有约束都必须严格满足的刚性排产。
+steps:
+  - 把每条约束标注为硬约束或软偏好
+  - 先只按硬约束求一个可行解
+  - 在可行解上逐条尝试改善软偏好
+  - 每次改善后复核硬约束仍然成立
+  - 输出时标明哪些软偏好未被满足
+failureModes:
+  - 为满足软偏好牺牲了硬约束
+  - 把没有说明强弱的约束自行判成软约束
+exitConditions:
+  - 若硬约束本身无解，停止优化并报告是哪几条硬约束互相冲突
+outputContract: 输出 assignments 与 verification；软偏好未满足的情况写进 verification 的 detail

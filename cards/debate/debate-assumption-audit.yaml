@@ -1,0 +1,16 @@
+id: debate-assumption-audit
+domain: debate
+name: 隐含假设审计
+applicableWhen: 审查一份论证中未明说的假设是否成立的评估任务；不适用于只需比较双方结论的简单对比。
+steps:
+  - 逐句找出论证中隐含的假设
+  - 标注每条假设是事实假设还是价值假设
+  - 检查事实假设是否有证据支撑
+  - 检查价值假设是否被双方共同接受
+  - 指出一旦假设不成立结论会怎样变化
+failureModes:
+  - 把作者明说的前提也算作隐含假设
+  - 只列假设不评估其影响
+exitConditions:
+  - 若核心结论完全依赖一条无法验证的假设，明确说明该结论目前不可判定
+outputContract: 输出 debate_v1，concessions 中提示假设被推翻后的结论变化

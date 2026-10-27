@@ -1,0 +1,16 @@
+id: planning-ratio-maxmin
+domain: planning
+name: 保底均衡分配
+applicableWhen: 需要在多个对象间尽量均衡、避免某一方被分得过少的配额任务；不适用于有明确比例要求的分配。
+steps:
+  - 先给每个对象分配最小保底量
+  - 检查保底量之和是否已超过总量
+  - 每次把一份余量给当前最少的对象
+  - 达到上限的对象跳过
+  - 检查最终极差是否已尽可能小
+failureModes:
+  - 保底量之和超过总量却没有先检查
+  - 平均分配忽略各对象上限差异
+exitConditions:
+  - 若保底量之和超过总量，停止并报告需要下调保底的差额
+outputContract: 输出 assignments 与各对象最终量、极差

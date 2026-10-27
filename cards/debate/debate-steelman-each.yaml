@@ -1,0 +1,16 @@
+id: debate-steelman-each
+domain: debate
+name: 逐方钢人化对比
+applicableWhen: 立场分析、方案对比、论证评估，任务要求判断哪边更有理；不适用于只有单方观点或纯事实查证。
+steps:
+  - 为 A 方构造最强论证（不是稻草人）
+  - 为 B 方构造最强论证
+  - 找出双方论证依赖的关键前提差异
+  - 评估哪些前提有证据支持、哪些是价值判断
+  - 区分事实分歧与价值分歧，分别给结论
+failureModes:
+  - 双方论证强度不对等，一方被削弱
+  - 把价值分歧误判为事实分歧
+exitConditions:
+  - 分歧纯属价值判断时，不强行裁决，输出「取决于价值取向」并说明分歧点
+outputContract: 输出 debate_v1，stances 覆盖双方，verdict 区分事实与价值两类结论

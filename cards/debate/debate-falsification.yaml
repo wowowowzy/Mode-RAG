@@ -1,0 +1,16 @@
+id: debate-falsification
+domain: debate
+name: 可证伪性检验
+applicableWhen: 判断一个主张是否可被证伪、现有信息是否已证伪它的任务；不适用于纯价值主张。
+steps:
+  - 写出该主张的可观测预测
+  - 指出哪些观测结果会推翻它
+  - 检查现有信息中是否有这类结果
+  - 若没有，判断是未检验还是已被支持
+  - 给出当前证据等级
+failureModes:
+  - 把「尚未证伪」当成「已被证实」
+  - 构造无法被任何观测推翻的主张
+exitConditions:
+  - 若主张本身不可证伪，明确指出这属于信念而非经验判断，停止用证据强弱比较
+outputContract: 输出 debate_v1，evidence 标注证据等级，verdict 写明已证伪、未检验或暂定支持

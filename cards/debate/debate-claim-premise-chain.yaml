@@ -1,0 +1,16 @@
+id: debate-claim-premise-chain
+domain: debate
+name: 论证链条拆解
+applicableWhen: 拆解一段论证的结构、检查结论是否由前提推出的任务；不适用于只需表态支持哪方的场景。
+steps:
+  - 标出最终结论
+  - 逐层拆出支撑它的中间结论
+  - 检查每一层的推理是否成立
+  - 找出最薄弱的一环
+  - 说明该环断裂时结论还剩多少支撑
+failureModes:
+  - 把并列的理由当成递进链条
+  - 跳过中间结论直接评价最终结论
+exitConditions:
+  - 若论证依赖未说出的中间环节，指出缺口并说明补齐前无法判断结论
+outputContract: 输出 debate_v1，evidence 按推理层级排列，并标出最薄弱环节

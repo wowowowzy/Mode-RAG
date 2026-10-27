@@ -1,0 +1,16 @@
+id: general-hypothesis-elimination
+domain: general
+name: 假设逐一排除
+applicableWhen: 排查故障根因、需要在多个候选原因中逐一排除的任务；不适用于原因已经确定只需修复的场景。
+steps:
+  - 列出所有可能原因，包括看似不可能的
+  - 为每个原因设计一个能区分它的观测
+  - 优先做能一次排除最多原因的观测
+  - 按观测结果剔除原因并更新候选集
+  - 直到只剩一个原因或确认无法区分
+failureModes:
+  - 先认定一个原因再找证据支持
+  - 观测无法区分两个候选却当成已排除
+exitConditions:
+  - 若剩余候选无法用现有手段区分，输出候选集与需要的额外信息，不强行选一个
+outputContract: 分节输出 hypotheses / test / eliminated / remaining / next_step

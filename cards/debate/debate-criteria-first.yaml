@@ -1,0 +1,16 @@
+id: debate-criteria-first
+domain: debate
+name: 标准先行评比
+applicableWhen: 多方案评比、需要先立评价标准再打分的决策任务；不适用于只有一个可行方案的讨论。
+steps:
+  - 先写出评价维度与各自权重
+  - 说明每个维度的判定依据
+  - 逐方案按维度打分并给出理由
+  - 做敏感性检查：权重变化是否改变排序
+  - 输出排序与最敏感维度
+failureModes:
+  - 先看结果再倒推标准
+  - 维度之间高度重叠导致重复计分
+exitConditions:
+  - 若排序对权重极敏感，输出「排序不稳健」并说明需要先确定权重
+outputContract: 输出 debate_v1，verdict 给出排序与最敏感维度

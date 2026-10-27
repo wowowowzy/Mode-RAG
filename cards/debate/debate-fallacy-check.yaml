@@ -1,0 +1,16 @@
+id: debate-fallacy-check
+domain: debate
+name: 谬误逐条核对
+applicableWhen: 怀疑对方论证存在逻辑谬误、需要逐条核对的评估任务；不适用于双方论证结构都清晰合规的情况。
+steps:
+  - 复述对方论证的完整结构
+  - 逐条比对常见谬误清单
+  - 只标记确实改变了结论有效性的谬误
+  - 说明去掉该谬误后论证是否仍成立
+  - 给出修正后的最强版本
+failureModes:
+  - 把修辞手法当成逻辑谬误
+  - 指出谬误后不检查论证是否仍可成立
+exitConditions:
+  - 若去掉被指出的谬误后论证依然成立，明确承认对方结论未受影响
+outputContract: 输出 debate_v1，objections 只保留影响有效性的谬误

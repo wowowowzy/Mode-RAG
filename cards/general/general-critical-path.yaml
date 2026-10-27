@@ -1,0 +1,16 @@
+id: general-critical-path
+domain: general
+name: 关键路径识别
+applicableWhen: 多任务并行的项目排期、需要识别关键路径的任务；不适用于任务之间没有依赖的简单清单。
+steps:
+  - 列出任务与依赖关系
+  - 估计每个任务的持续时间
+  - 计算最早与最晚开始时间
+  - 找出零浮动时间的任务链
+  - 给出关键路径与可压缩点
+failureModes:
+  - 忽略资源冲突导致并行任务实际串行
+  - 只压缩非关键任务
+exitConditions:
+  - 若关键路径上的任务都已到最短工期，说明总工期无法再压缩
+outputContract: 分节输出 tasks / dependencies / critical_path / float / compression_options
