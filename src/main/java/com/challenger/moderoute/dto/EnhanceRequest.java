@@ -15,9 +15,6 @@ public record EnhanceRequest(
 
     public record Options(
             @Schema(description = "粗筛候选数，3–26，默认 8", example = "8")
-            Integer topK,
-
-            @Schema(description = "注入文本的 token 预算，默认 400", example = "400")
-            Integer budgetTokens) {
+            Integer topK) {
     }
 }

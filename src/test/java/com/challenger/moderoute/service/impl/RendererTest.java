@@ -3,8 +3,6 @@ package com.challenger.moderoute.service.impl;
 import com.challenger.moderoute.common.util.TokenEstimator;
 import com.challenger.moderoute.entity.Card;
 import com.challenger.moderoute.entity.enums.CardDomain;
-import com.challenger.moderoute.service.impl.SkeletonRenderer;
-
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -26,7 +24,7 @@ class RendererTest {
 
     @Test
     void 完整渲染包含全部段落与输出格式() {
-        String prompt = renderer.render(card(), 2000);
+        String prompt = renderer.render(card());
         assertThat(prompt).contains("【推理骨架：演示骨架】")
                 .contains("适用条件：")
                 .contains("1. 统计可用工时")
@@ -38,30 +36,22 @@ class RendererTest {
     }
 
     @Test
-    void 预算不足时先裁输出格式示例再裁失败模式() {
-        int full = TokenEstimator.estimate(renderer.render(card(), 2000));
-        assertThat(full).isGreaterThan(50);
-
-        String trimmed = renderer.render(card(), 110);
-        assertThat(TokenEstimator.estimate(trimmed)).isLessThanOrEqualTo(110);
-        assertThat(trimmed).doesNotContain("常见失败模式");
-        assertThat(trimmed).contains("停止条件");
+    void 不做长度裁剪() {
+        String prompt = renderer.render(card());
+        int tokens = TokenEstimator.estimate(prompt);
+        assertThat(tokens).isGreaterThan(50);
+        assertThat(prompt).contains("常见失败模式").contains("停止条件").contains("plan_v1");
     }
 
     @Test
     void 渲染是确定性的() {
-        assertThat(renderer.render(card(), 400)).isEqualTo(renderer.render(card(), 400));
+        assertThat(renderer.render(card())).isEqualTo(renderer.render(card()));
     }
 
     @Test
-    void token估算与截断() {
+    void token估算() {
         assertThat(TokenEstimator.estimate("")).isZero();
         assertThat(TokenEstimator.estimate("中文四字")).isEqualTo(4);
         assertThat(TokenEstimator.estimate("abcdefgh")).isEqualTo(2);
-
-        String longText = "第一行内容\n第二行内容\n第三行内容\n第四行内容";
-        String cut = TokenEstimator.truncateToTokens(longText, 8);
-        assertThat(TokenEstimator.estimate(cut)).isLessThanOrEqualTo(8);
-        assertThat(cut).doesNotContain("第四行内容");
     }
 }

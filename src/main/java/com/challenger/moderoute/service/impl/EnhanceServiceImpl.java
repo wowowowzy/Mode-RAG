@@ -4,7 +4,6 @@ import com.challenger.moderoute.common.ApiException;
 import com.challenger.moderoute.common.util.Gate;
 import com.challenger.moderoute.common.util.LibraryVersion;
 import com.challenger.moderoute.common.util.TokenEstimator;
-import com.challenger.moderoute.config.ModeRouteProperties;
 import com.challenger.moderoute.dto.EnhanceRequest;
 import com.challenger.moderoute.dto.EnhanceResponse;
 import com.challenger.moderoute.entity.Card;
@@ -48,20 +47,17 @@ public class EnhanceServiceImpl implements EnhanceService {
     private static final int MAX_TOP_K = 26;
     private static final int MAX_TRACE_ID_LENGTH = 256;
 
-    private final ModeRouteProperties properties;
     private final CardLibraryService libraryService;
     private final RecallService recallService;
     private final DecideService decideService;
     private final RenderService renderService;
     private final AuditService auditService;
 
-    public EnhanceServiceImpl(ModeRouteProperties properties,
-                              CardLibraryService libraryService,
+    public EnhanceServiceImpl(CardLibraryService libraryService,
                               RecallService recallService,
                               DecideService decideService,
                               RenderService renderService,
                               AuditService auditService) {
-        this.properties = properties;
         this.libraryService = libraryService;
         this.recallService = recallService;
         this.decideService = decideService;
@@ -76,7 +72,6 @@ public class EnhanceServiceImpl implements EnhanceService {
         String task = request.task();
         validateTask(task);
         int topK = resolveTopK(request);
-        int budgetTokens = resolveBudget(request);
         String traceId = resolveTraceId(request.traceId());
 
         CardLibrary library = libraryService.library();
@@ -85,12 +80,12 @@ public class EnhanceServiceImpl implements EnhanceService {
         }
 
         long start = System.nanoTime();
-        PipelineResult result = runPipeline(task, topK, budgetTokens, library);
+        PipelineResult result = runPipeline(task, topK, library);
         Outcome outcome = result.outcome();
         long latencyMs = (System.nanoTime() - start) / 1_000_000L;
 
         auditService.record(buildAudit(traceId, outcome, library, latencyMs,
-                result.recallMs(), result.decideMs(), topK, budgetTokens, task));
+                result.recallMs(), result.decideMs(), topK, task));
 
         return new EnhanceResponse(
                 outcome.prompt(),
@@ -104,7 +99,7 @@ public class EnhanceServiceImpl implements EnhanceService {
 
     // ---------------------------------------------------------------- 主链路
 
-    private PipelineResult runPipeline(String task, int topK, int budgetTokens, CardLibrary library) {
+    private PipelineResult runPipeline(String task, int topK, CardLibrary library) {
         List<ScoredCard> candidates;
         long recallStart = System.nanoTime();
         try {
@@ -113,7 +108,7 @@ public class EnhanceServiceImpl implements EnhanceService {
             log.warn("召回失败，转规则降级: {}", e.getMessage());
             long recallMs = (System.nanoTime() - recallStart) / 1_000_000L;
             return new PipelineResult(
-                    degrade(task, topK, budgetTokens, library, candidatesOrEmpty(null), "recall: " + e.getMessage()),
+                    degrade(task, topK, library, candidatesOrEmpty(null), "recall: " + e.getMessage()),
                     recallMs, -1);
         }
         long recallMs = (System.nanoTime() - recallStart) / 1_000_000L;
@@ -130,7 +125,7 @@ public class EnhanceServiceImpl implements EnhanceService {
             log.warn("精判失败，转规则降级: {}", e.getMessage());
             long decideMs = (System.nanoTime() - decideStart) / 1_000_000L;
             return new PipelineResult(
-                    degrade(task, topK, budgetTokens, library, candidates, "decider: " + e.getMessage()),
+                    degrade(task, topK, library, candidates, "decider: " + e.getMessage()),
                     recallMs, decideMs);
         }
         long decideMs = (System.nanoTime() - decideStart) / 1_000_000L;
@@ -141,19 +136,19 @@ public class EnhanceServiceImpl implements EnhanceService {
                     recallMs, decideMs);
         }
         Card card = library.byId().get(decided.cardId());
-        String prompt = renderService.render(card, budgetTokens);
+        String prompt = renderService.render(card);
         return new PipelineResult(
                 new Outcome(GateAction.INJECT, card.id(), decided.confidence(), prompt, candidates, decided.decision(), null),
                 recallMs, decideMs);
     }
 
-    private Outcome degrade(String task, int topK, int budgetTokens, CardLibrary library,
+    private Outcome degrade(String task, int topK, CardLibrary library,
                             List<ScoredCard> candidates, String reason) {
         try {
             DecisionOutcome decided = decideService.fallback(task, library, topK);
             if (decided.action() == GateAction.INJECT && decided.cardId() != null) {
                 Card card = library.byId().get(decided.cardId());
-                String prompt = renderService.render(card, budgetTokens);
+                String prompt = renderService.render(card);
                 return new Outcome(GateAction.DEGRADED, card.id(), decided.confidence(), prompt,
                         candidates, decided.decision(), reason);
             }
@@ -191,20 +186,6 @@ public class EnhanceServiceImpl implements EnhanceService {
         return topK;
     }
 
-    private int resolveBudget(EnhanceRequest request) {
-        Integer budget = request.options() == null ? null : request.options().budgetTokens();
-        int min = properties.getRender().getMinBudgetTokens();
-        int max = properties.getRender().getMaxBudgetTokens();
-        if (budget == null) {
-            return properties.getRender().getDefaultBudgetTokens();
-        }
-        if (budget < min || budget > max) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_OPTIONS",
-                    "options.budgetTokens 必须在 " + min + "–" + max + " 之间");
-        }
-        return budget;
-    }
-
     private String resolveTraceId(String traceId) {
         if (traceId == null || traceId.isBlank()) {
             return UUID.randomUUID().toString();
@@ -221,7 +202,7 @@ public class EnhanceServiceImpl implements EnhanceService {
 
     private Map<String, Object> buildAudit(String traceId, Outcome outcome,
                                            CardLibrary library, long latencyMs, long recallMs, long decideMs,
-                                           int topK, int budgetTokens, String task) {
+                                           int topK, String task) {
         Map<String, Object> event = new LinkedHashMap<>();
         event.put("ts", Instant.now().toString());
         event.put("traceId", traceId);
@@ -231,7 +212,6 @@ public class EnhanceServiceImpl implements EnhanceService {
         event.put("taskSha256", HexFormat.of().formatHex(sha256(task)));
         event.put("taskLength", task.codePointCount(0, task.length()));
         event.put("topK", topK);
-        event.put("budgetTokens", budgetTokens);
         event.put("latencyMs", latencyMs);
         if (recallMs >= 0) {
             event.put("recallMs", recallMs);

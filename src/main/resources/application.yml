@@ -36,10 +36,6 @@ moderoute:
     # 我们自己的温度缩放，只在验证集上拟合；引擎自带温度不在这里。
     temperature: ${MODEROUTE_TEMPERATURE:1.0}
     rule-min-score: 0.02
-  render:
-    default-budget-tokens: 400
-    min-budget-tokens: 64
-    max-budget-tokens: 2000
   gate:
     # 默认 0：注入与否完全由「None 是否胜出」决定，不做阈值工程。
     inject-floor: ${MODEROUTE_INJECT_FLOOR:0.0}

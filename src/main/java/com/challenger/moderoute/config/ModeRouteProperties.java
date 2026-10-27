@@ -15,7 +15,6 @@ public class ModeRouteProperties {
 
     private final Recall recall = new Recall();
     private final Decider decider = new Decider();
-    private final Render render = new Render();
     private final Gate gate = new Gate();
     private final Audit audit = new Audit();
 
@@ -35,9 +34,6 @@ public class ModeRouteProperties {
         return decider;
     }
 
-    public Render getRender() {
-        return render;
-    }
 
     public Gate getGate() {
         return gate;
@@ -212,37 +208,6 @@ public class ModeRouteProperties {
 
         public void setRuleMinScore(double ruleMinScore) {
             this.ruleMinScore = ruleMinScore;
-        }
-    }
-
-    public static class Render {
-
-        private int defaultBudgetTokens = 400;
-        private int minBudgetTokens = 64;
-        private int maxBudgetTokens = 2_000;
-
-        public int getDefaultBudgetTokens() {
-            return defaultBudgetTokens;
-        }
-
-        public void setDefaultBudgetTokens(int defaultBudgetTokens) {
-            this.defaultBudgetTokens = defaultBudgetTokens;
-        }
-
-        public int getMinBudgetTokens() {
-            return minBudgetTokens;
-        }
-
-        public void setMinBudgetTokens(int minBudgetTokens) {
-            this.minBudgetTokens = minBudgetTokens;
-        }
-
-        public int getMaxBudgetTokens() {
-            return maxBudgetTokens;
-        }
-
-        public void setMaxBudgetTokens(int maxBudgetTokens) {
-            this.maxBudgetTokens = maxBudgetTokens;
         }
     }
 

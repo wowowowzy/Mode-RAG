@@ -34,43 +34,6 @@ public final class TokenEstimator {
         return tokens + flush(asciiRun);
     }
 
-    public static String truncateToTokens(String text, int budget) {
-        if (budget <= 0) {
-            return "";
-        }
-        int tokens = 0;
-        int asciiRun = 0;
-        int lastBreak = -1;
-        for (int i = 0; i < text.length(); ) {
-            int cp = text.codePointAt(i);
-            int width = Character.charCount(cp);
-            int delta;
-            if (isCjk(cp)) {
-                delta = flush(asciiRun) + 1;
-                asciiRun = 0;
-            } else if (cp < 128 && Character.isLetterOrDigit(cp)) {
-                asciiRun++;
-                delta = 0;
-            } else if (Character.isWhitespace(cp)) {
-                delta = flush(asciiRun);
-                asciiRun = 0;
-            } else {
-                delta = flush(asciiRun) + 1;
-                asciiRun = 0;
-            }
-            if (tokens + delta > budget) {
-                String head = lastBreak > 0 ? text.substring(0, lastBreak) : text.substring(0, i);
-                return head.stripTrailing();
-            }
-            tokens += delta;
-            i += width;
-            if (cp == '\n') {
-                lastBreak = i;
-            }
-        }
-        return text;
-    }
-
     private static int flush(int asciiRun) {
         return asciiRun == 0 ? 0 : (asciiRun + 3) / 4;
     }

@@ -55,7 +55,7 @@ java -jar target\moderoute-1.0.0.jar `
 ```json
 {
   "task": "任务文本，1–4000 字",
-  "options": { "topK": 8, "budgetTokens": 400 },
+  "options": { "topK": 8 },
   "traceId": "可选"
 }
 ```
@@ -88,7 +88,7 @@ java -jar target\moderoute-1.0.0.jar `
 | 状态 | code | 触发条件 |
 | --- | --- | --- |
 | 400 | `INVALID_TASK` | task 缺失或空白 |
-| 400 | `INVALID_OPTIONS` | topK 不在 3–26，budgetTokens 不在 64–2000 |
+| 400 | `INVALID_OPTIONS` | topK 不在 3–26 |
 | 400 | `INVALID_JSON` | 请求体不是合法 JSON |
 | 422 | `TASK_TOO_LONG` | task 超过 4000 字 |
 | 503 | `LIBRARY_NOT_LOADED` | 模式库未加载 |
@@ -111,7 +111,7 @@ task ──embedding──> 余弦 top-k（内存扫描）
      ──决策引擎────> 选项概率分布
      ──温度缩放────> 标定后置信度
      ──门控────> None 胜出=FALLBACK，否则 INJECT
-     ──渲染────> prompt（受 budgetTokens 约束）
+     ──渲染────> prompt（卡片全文，不做裁剪）
      ──审计────> var/audit/audit-YYYY-MM-DD.jsonl
 ```
 
@@ -150,7 +150,6 @@ task ──embedding──> 余弦 top-k（内存扫描）
 | `moderoute.decider.base-url` | `http://127.0.0.1:8765` | System One 兼容服务 |
 | `moderoute.decider.temperature` | `1.0` | **我们自己的**温度缩放，只在验证集上拟合 |
 | `moderoute.gate.inject-floor` | `0` | 可选安全阀；默认完全由「None 是否胜出」决定 |
-| `moderoute.render.default-budget-tokens` | `400` | 请求未指定时的预算 |
 | `moderoute.audit.dir` | `./var/audit` | 每请求一行 JSONL |
 
 ---
@@ -218,7 +217,7 @@ task ──embedding──> 余弦 top-k（内存扫描）
 1. **精判候选上限 25 张卡 + None**。SPEC 写 topK 上限 26，但单字母只有 26 个且 None 必须占一位；`topK=26` 时实际传 25 张卡。
 2. **Spring AI 只用 `spring-ai-model` 抽象**，OpenAI 兼容传输层自己写（`OpenAiCompatibleEmbeddingModel`）。若引入 `spring-ai-openai`，会把 chat 类一起带进依赖树，「不碰执行模型」就只能靠承诺、不能靠依赖树。换后端仍只改配置。
 3. **召回向量只用 `applicableWhen` 的正面半句**。负例是给「排除」用的，混进相似度会变成正向信号；精判仍看到完整字段。
-4. **输出格式示例压缩成字段名清单**，让完整骨架（含失败模式与退出条件）能落在默认 400 token 内。裁剪顺序固定：先丢格式示例，再丢失败模式，最后硬截断。
+4. **注入文本不做长度裁剪**。原先 `budgetTokens`（默认 400）会在预算不足时丢掉失败模式或输出格式示例；现在卡片全文注入，接口不再接受该参数，审计里只保留 `estimatedTokens` 供观察。
 5. **卡片与任务集由同一作者（AI）产出**。「写卡的人不看任务生成器模板」这条纪律在单人 + AI 的开发形态下只能部分执行：任务文本由生成器模板产出、卡片在结构确定后撰写，但无法证明作者隔离。这一点必须写进实验报告的局限章节，不能含糊过去。
 6. **向量落 SQLite，偏离 SPEC「不引入数据库」**。SPEC §3 明确不引数据库；按实际取舍改为 SQLite + sqlite-vec（WAL），运行路径只有这一条。代价是引入 `sqlite-jdbc` 与一个原生扩展（`vec0.dll`，缺失则拒绝启动），数据库只存**派生向量**，不存会话、不存卡片，删掉即重算，接口契约与决策结果不变。
 
