@@ -1,7 +1,7 @@
 id: planning-full-replan
 domain: planning
 name: 全量重排
-applicableWhen: 生产计划大幅变动、既有排程失效需要整体重算的任务；不适用于只插入一两张新订单的局部调整。
+applicableWhen: 输入大幅变动、既有安排整体失效需要重算的任务；不适用于与该结构无关的任务。
 steps:
   - 清空既有分配，只保留订单、产线与日期三类原始数据
   - 统计全局工时需求与全局可用工时

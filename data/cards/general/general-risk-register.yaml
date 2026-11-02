@@ -1,7 +1,7 @@
 id: general-risk-register
 domain: general
 name: 风险登记排序
-applicableWhen: 需要系统登记风险、量化等级并排定处置顺序的管理任务；不适用于单次低影响的小决策。
+applicableWhen: 需要系统登记风险、量化等级并排定处置顺序的管理任务；不适用于与该结构无关的任务。
 steps:
   - 逐条登记风险事件
   - 估计发生概率与影响

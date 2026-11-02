@@ -1,7 +1,7 @@
 id: general-fault-tree
 domain: general
 name: 故障树分解
-applicableWhen: 复杂系统故障、需要自顶向下分解失效路径的诊断任务；不适用于单点且显而易见的故障。
+applicableWhen: 复杂系统故障、需要自顶向下分解失效路径的诊断任务；不适用于与该结构无关的任务。
 steps:
   - 定义顶层的失效事件
   - 向下分解为必要的子事件组合

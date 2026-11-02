@@ -1,7 +1,7 @@
 id: debate-decision-threshold
 domain: debate
 name: 行动门槛判断
-applicableWhen: 需要判断支持某一方的证据是否已达到行动门槛的评估；不适用于纯学术比较、不涉及决策的讨论。
+applicableWhen: 需要判断证据是否已达到行动门槛的评估任务；不适用于与该结构无关的任务。
 steps:
   - 明确该决策的错误代价与门槛
   - 估计支持某一方的证据强度

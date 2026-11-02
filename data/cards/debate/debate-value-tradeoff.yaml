@@ -1,7 +1,7 @@
 id: debate-value-tradeoff
 domain: debate
 name: 价值取舍代价
-applicableWhen: 双方目标一致但价值排序不同、需要说明取舍代价的对比任务；不适用于一方目标本身就不合理的场景。
+applicableWhen: 双方目标一致但价值排序不同、需说明取舍代价的任务；不适用于与该结构无关的任务。
 steps:
   - 确认双方共享的最终目标
   - 列出各自优先保护的价值

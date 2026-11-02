@@ -1,7 +1,7 @@
 id: general-first-principles
 domain: general
 name: 第一性原理重推
-applicableWhen: 既有做法可疑、需要从基本约束重新推导方案的任务；不适用于已有成熟且验证充分的标准流程。
+applicableWhen: 既有做法可疑、需要从基本约束重新推导方案的任务；不适用于与该结构无关的任务。
 steps:
   - 列出该问题不可违背的物理或业务约束
   - 剥离行业惯例与历史做法

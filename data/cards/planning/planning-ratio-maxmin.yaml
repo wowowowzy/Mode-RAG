@@ -1,7 +1,7 @@
 id: planning-ratio-maxmin
 domain: planning
 name: 保底均衡分配
-applicableWhen: 需要在多个对象间尽量均衡、避免某一方被分得过少的配额任务；不适用于有明确比例要求的分配。
+applicableWhen: 多个对象间尽量均衡、避免一方被明显少分的任务；不适用于与该结构无关的任务。
 steps:
   - 先给每个对象分配最小保底量
   - 检查保底量之和是否已超过总量

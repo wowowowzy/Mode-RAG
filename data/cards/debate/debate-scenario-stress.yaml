@@ -1,7 +1,7 @@
 id: debate-scenario-stress
 domain: debate
 name: 极端情形压测
-applicableWhen: 方案在常规条件下都可行、需要比较极端情形下鲁棒性的评估；不适用于方案尚未成形的早期讨论。
+applicableWhen: 常规条件下可行、需比较极端情形表现的任务；不适用于与该结构无关的任务。
 steps:
   - 列出三到四个关键外部变量
   - 为每个变量设置乐观、基准、悲观三档

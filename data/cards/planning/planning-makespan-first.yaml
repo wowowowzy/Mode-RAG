@@ -1,7 +1,7 @@
 id: planning-makespan-first
 domain: planning
 name: 总工期优先
-applicableWhen: 目标是尽快完成全部订单、优先压缩总完工时间的排产任务；不适用于更在意各产线负荷均衡的场景。
+applicableWhen: 以尽快完成全部任务、压缩总完成时间为目标的排程任务；不适用于与该结构无关的任务。
 steps:
   - 找出决定总完工时间的关键订单链
   - 优先保证关键链上不停工

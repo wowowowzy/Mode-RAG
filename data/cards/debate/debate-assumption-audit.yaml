@@ -1,7 +1,7 @@
 id: debate-assumption-audit
 domain: debate
 name: 隐含假设审计
-applicableWhen: 审查一份论证中未明说的假设是否成立的评估任务；不适用于只需比较双方结论的简单对比。
+applicableWhen: 需要检查论证中未明说的前提是否成立的任务；不适用于与该结构无关的任务。
 steps:
   - 逐句找出论证中隐含的假设
   - 标注每条假设是事实假设还是价值假设

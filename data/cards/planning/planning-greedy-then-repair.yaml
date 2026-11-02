@@ -1,7 +1,7 @@
 id: planning-greedy-then-repair
 domain: planning
 name: 贪心补排
-applicableWhen: 先快速给出粗略排程、再逐步修掉违例的规划任务；不适用于首次结果就必须严格可行的高风险场景。
+applicableWhen: 先给粗略安排、再逐步修掉违规之处的任务；不适用于与该结构无关的任务。
 steps:
   - 按工时从大到小贪心填入容量最大的空档
   - 逐条检查约束并列出违例清单

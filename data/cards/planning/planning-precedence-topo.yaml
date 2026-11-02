@@ -1,7 +1,7 @@
 id: planning-precedence-topo
 domain: planning
 name: 依赖拓扑排序
-applicableWhen: 订单之间存在前后依赖、必须按拓扑顺序安排开工的任务；不适用于互相独立的并行订单。
+applicableWhen: 任务之间有明确前后依赖、需按依赖排序的任务；不适用于与该结构无关的任务。
 steps:
   - 列出所有依赖边并检查是否有环
   - 找出入度为零的订单作为第一批

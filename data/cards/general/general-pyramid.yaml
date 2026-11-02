@@ -1,7 +1,7 @@
 id: general-pyramid
 domain: general
 name: 结论先行结构
-applicableWhen: 需要把复杂材料组织成结论先行的汇报结构；不适用于需要按时间线叙述的事件复盘。
+applicableWhen: 需要把复杂材料组织成结论先行的汇报结构；不适用于与该结构无关的任务。
 steps:
   - 写出唯一的核心结论
   - 列出支撑结论的三到四条理由

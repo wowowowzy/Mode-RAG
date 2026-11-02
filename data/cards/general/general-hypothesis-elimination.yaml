@@ -1,7 +1,7 @@
 id: general-hypothesis-elimination
 domain: general
 name: 假设逐一排除
-applicableWhen: 排查故障根因、需要在多个候选原因中逐一排除的任务；不适用于原因已经确定只需修复的场景。
+applicableWhen: 排查故障根因、需要在多个候选原因中逐一排除的任务；不适用于与该结构无关的任务。
 steps:
   - 列出所有可能原因，包括看似不可能的
   - 为每个原因设计一个能区分它的观测

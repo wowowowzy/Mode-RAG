@@ -1,7 +1,7 @@
 id: general-analogy-check
 domain: general
 name: 类比有效性检验
-applicableWhen: 借助类比解释或迁移方案、需要检验类比是否成立的推理任务；不适用于要求严格定量结论的场景。
+applicableWhen: 借助类比解释或迁移方案、需要检验类比是否成立的推理任务；不适用于与该结构无关的任务。
 steps:
   - 明确源域与目标域
   - 列出类比依赖的对应关系

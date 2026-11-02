@@ -1,7 +1,7 @@
 id: debate-claim-premise-chain
 domain: debate
 name: 论证链条拆解
-applicableWhen: 拆解一段论证的结构、检查结论是否由前提推出的任务；不适用于只需表态支持哪方的场景。
+applicableWhen: 需要拆解论证结构、判断结论能否由前提推出的任务；不适用于与该结构无关的任务。
 steps:
   - 标出最终结论
   - 逐层拆出支撑它的中间结论

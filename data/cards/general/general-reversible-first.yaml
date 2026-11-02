@@ -1,7 +1,7 @@
 id: general-reversible-first
 domain: general
 name: 可逆优先
-applicableWhen: 决策不确定、需要优先选择可回退路径的行动规划；不适用于不可逆且代价极高的一次性决策。
+applicableWhen: 决策不确定、需要优先选择可回退路径的行动规划；不适用于与该结构无关的任务。
 steps:
   - 判断每个选项是否可逆、回退代价多大
   - 优先选择可低成本回退的选项

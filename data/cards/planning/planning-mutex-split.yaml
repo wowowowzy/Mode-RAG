@@ -1,7 +1,7 @@
 id: planning-mutex-split
 domain: planning
 name: 互斥绕行拆分
-applicableWhen: 允许把订单拆成多段以绕开互斥资源占用的排产任务；不适用于明确要求整单不可拆的场景。
+applicableWhen: 允许拆段以避开资源占用的排程任务；不适用于与该结构无关的任务。
 steps:
   - 确认哪些订单允许拆分以及最小可拆粒度
   - 为互斥资源排出占用时间轴

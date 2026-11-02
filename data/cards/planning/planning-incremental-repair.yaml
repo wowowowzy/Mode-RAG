@@ -1,7 +1,7 @@
 id: planning-incremental-repair
 domain: planning
 name: 增量修复
-applicableWhen: 已有可用排程，只需插入或调整少数订单的增量修复任务；不适用于原排程已整体失效的情况。
+applicableWhen: 已有可用安排、只需插入或调整少数任务的任务；不适用于与该结构无关的任务。
 steps:
   - 锁定不涉及变动的订单分配
   - 找出可容纳新订单的产线与日期空档

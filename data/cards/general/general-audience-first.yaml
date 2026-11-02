@@ -1,7 +1,7 @@
 id: general-audience-first
 domain: general
 name: 读者优先表达
-applicableWhen: 需要向特定对象解释或说服的写作与沟通任务；不适用于纯内部备忘或只给自己看的草稿。
+applicableWhen: 需要向特定对象解释或说服的写作与沟通任务；不适用于与该结构无关的任务。
 steps:
   - 明确读者是谁、已经知道什么
   - 确定读者最关心的问题

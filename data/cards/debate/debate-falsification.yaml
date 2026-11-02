@@ -1,7 +1,7 @@
 id: debate-falsification
 domain: debate
 name: 可证伪性检验
-applicableWhen: 判断一个主张是否可被证伪、现有信息是否已证伪它的任务；不适用于纯价值主张。
+applicableWhen: 判断主张是否可被证伪、现有信息是否已证伪它的任务；不适用于与该结构无关的任务。
 steps:
   - 写出该主张的可观测预测
   - 指出哪些观测结果会推翻它

@@ -1,7 +1,7 @@
 id: debate-common-ground
 domain: debate
 name: 共识收缩分歧
-applicableWhen: 双方分歧看似很大、需要先找共识再缩小分歧范围的讨论；不适用于双方目标根本对立的对抗性争论。
+applicableWhen: 分歧看似很大、需要先找共识再缩小分歧的讨论；不适用于与该结构无关的任务。
 steps:
   - 列出双方都接受的事实
   - 列出双方都不反对的价值

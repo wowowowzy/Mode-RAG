@@ -1,7 +1,7 @@
 id: general-source-triangulation
 domain: general
 name: 多源三角验证
-applicableWhen: 多个来源说法不一致、需要判断可信度的信息核实任务；不适用于只有单一权威来源的查询。
+applicableWhen: 多个来源说法不一致、需要判断可信度的信息核实任务；不适用于与该结构无关的任务。
 steps:
   - 列出各来源的主张与出处
   - 判断来源之间是否独立

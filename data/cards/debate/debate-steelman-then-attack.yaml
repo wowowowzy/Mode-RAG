@@ -1,7 +1,7 @@
 id: debate-steelman-then-attack
 domain: debate
 name: 强化后定向反驳
-applicableWhen: 需要先强化一方论证再集中攻击其薄弱处的评估任务；不适用于双方都需要对称展示的场景。
+applicableWhen: 先强化一方论证再集中攻击其薄弱处的任务；不适用于与该结构无关的任务。
 steps:
   - 选定被评估的一方，构造其最强论证
   - 找出该论证依赖的关键前提

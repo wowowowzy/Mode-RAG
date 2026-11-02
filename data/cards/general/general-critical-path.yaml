@@ -1,7 +1,7 @@
 id: general-critical-path
 domain: general
 name: 关键路径识别
-applicableWhen: 多任务并行的项目排期、需要识别关键路径的任务；不适用于任务之间没有依赖的简单清单。
+applicableWhen: 多任务并行的项目排期、需要识别关键路径的任务；不适用于与该结构无关的任务。
 steps:
   - 列出任务与依赖关系
   - 估计每个任务的持续时间

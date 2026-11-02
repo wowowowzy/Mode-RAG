@@ -1,7 +1,7 @@
 id: debate-steelman-each
 domain: debate
 name: 逐方钢人化对比
-applicableWhen: 立场分析、方案对比、论证评估，任务要求判断哪边更有理；不适用于只有单方观点或纯事实查证。
+applicableWhen: 需要对称强化并比较双方立场、判断哪边更有理的任务；不适用于与该结构无关的任务。
 steps:
   - 为 A 方构造最强论证（不是稻草人）
   - 为 B 方构造最强论证

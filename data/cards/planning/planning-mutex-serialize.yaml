@@ -1,7 +1,7 @@
 id: planning-mutex-serialize
 domain: planning
 name: 互斥资源串行化
-applicableWhen: 多张订单争用同一设备或同一时段、必须先定先后的排产任务；不适用于资源彼此独立互不争用的排程。
+applicableWhen: 多个任务争用同一资源或时段、需要定先后的排程任务；不适用于与该结构无关的任务。
 steps:
   - 列出所有互斥资源与各自的争用订单
   - 为每组互斥订单建立先后顺序

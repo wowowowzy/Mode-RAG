@@ -1,7 +1,7 @@
 id: general-rollback-plan
 domain: general
 name: 回退路径设计
-applicableWhen: 高风险变更上线前、需要预先设计回退路径的任务；不适用于可随时中止的试验性工作。
+applicableWhen: 高风险变更上线前、需要预先设计回退路径的任务；不适用于与该结构无关的任务。
 steps:
   - 明确变更的范围与影响面
   - 确定回退触发条件与判定人

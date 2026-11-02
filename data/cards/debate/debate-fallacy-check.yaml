@@ -1,7 +1,7 @@
 id: debate-fallacy-check
 domain: debate
 name: 谬误逐条核对
-applicableWhen: 怀疑对方论证存在逻辑谬误、需要逐条核对的评估任务；不适用于双方论证结构都清晰合规的情况。
+applicableWhen: 怀疑论证存在逻辑谬误、需要逐条核对的任务；不适用于与该结构无关的任务。
 steps:
   - 复述对方论证的完整结构
   - 逐条比对常见谬误清单

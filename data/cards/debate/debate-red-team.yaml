@@ -1,7 +1,7 @@
 id: debate-red-team
 domain: debate
 name: 红队攻击
-applicableWhen: 需要主动寻找某一方案致命弱点的评估任务；不适用于尚未形成明确方案的空泛讨论。
+applicableWhen: 需要主动寻找某个方案致命弱点的评估任务；不适用于与该结构无关的任务。
 steps:
   - 明确被攻击方案的核心主张
   - 假设它已经失败，倒推最可能的失败路径

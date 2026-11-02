@@ -1,7 +1,7 @@
 id: planning-ratio-proportional
 domain: planning
 name: 比例配额分配
-applicableWhen: 按比例或配额把总量分配到多条产线、多个订单的任务；不适用于有硬性上限且比例无法同时满足的场景。
+applicableWhen: 按给定比例或配额区间分配总量的任务；不适用于与该结构无关的任务。
 steps:
   - 计算各对象的目标占比与理论分配量
   - 先按理论量向下取整分配

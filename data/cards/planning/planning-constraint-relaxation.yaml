@@ -1,7 +1,7 @@
 id: planning-constraint-relaxation
 domain: planning
 name: 约束逐条放宽
-applicableWhen: 约束过紧导致无解、需要按可控幅度放宽并说明代价的规划任务；不适用于硬约束不可协商的场景。
+applicableWhen: 条件过紧导致无解、需要放宽并说明代价的任务；不适用于与该结构无关的任务。
 steps:
   - 先验证原始约束是否有解
   - 无解时按影响面从大到小排出可放宽的约束

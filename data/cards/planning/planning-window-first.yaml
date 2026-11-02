@@ -1,7 +1,7 @@
 id: planning-window-first
 domain: planning
 name: 时间窗先行排布
-applicableWhen: 订单带最晚完成日、需要先保时间窗再压工期的排产任务；不适用于没有截止日的纯容量分配。
+applicableWhen: 每个任务带最晚完成时间或可用时间区间的排程任务；不适用于与该结构无关的任务。
 steps:
   - 按最晚完成日升序排列订单
   - 为每张订单划定可用的作业日区间

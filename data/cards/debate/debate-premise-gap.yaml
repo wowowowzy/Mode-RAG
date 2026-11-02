@@ -1,7 +1,7 @@
 id: debate-premise-gap
 domain: debate
 name: 前提差异定位
-applicableWhen: 双方结论不同但论据相似、需要定位分歧来源的对比任务；不适用于一方明显缺乏论证的情况。
+applicableWhen: 结论不同但论据相似、需定位分歧来源的任务；不适用于与该结构无关的任务。
 steps:
   - 分别列出双方结论
   - 提取各自依赖的前提

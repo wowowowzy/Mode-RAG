@@ -1,7 +1,7 @@
 id: debate-evidence-gap
 domain: debate
 name: 证据缺口判定
-applicableWhen: 判断争论是否因证据不足而无法结论的任务；不适用于证据充分只差取舍的争论。
+applicableWhen: 判断争论是否因证据不足而无法下结论的任务；不适用于与该结构无关的任务。
 steps:
   - 列出双方各自需要的证据
   - 标记哪些证据已具备、哪些缺失

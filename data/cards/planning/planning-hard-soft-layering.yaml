@@ -1,7 +1,7 @@
 id: planning-hard-soft-layering
 domain: planning
 name: 硬软约束分层
-applicableWhen: 任务同时给出硬约束与软偏好、需要先保硬约束再优化偏好的规划；不适用于所有约束都必须严格满足的刚性排产。
+applicableWhen: 同时有硬性条件和可退让偏好、需先保硬条件的任务；不适用于与该结构无关的任务。
 steps:
   - 把每条约束标注为硬约束或软偏好
   - 先只按硬约束求一个可行解

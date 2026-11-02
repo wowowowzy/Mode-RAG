@@ -1,7 +1,7 @@
 id: general-premortem
 domain: general
 name: 事前验尸
-applicableWhen: 方案即将执行、需要提前识别失败风险的任务；不适用于还在构思阶段、方案尚未成形的讨论。
+applicableWhen: 方案即将执行、需要提前识别失败风险的任务；不适用于与该结构无关的任务。
 steps:
   - 假设方案已经失败
   - 列出导致失败的具体原因

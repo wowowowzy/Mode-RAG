@@ -1,7 +1,7 @@
 id: general-question-decompose
 domain: general
 name: 问题拆解
-applicableWhen: 问题过于笼统、需要拆成可分别回答的子问题；不适用于范围明确的小问题。
+applicableWhen: 问题过于笼统、需要拆成可分别回答的子问题；不适用于与该结构无关的任务。
 steps:
   - 重述问题并界定边界
   - 拆成互不重叠的子问题

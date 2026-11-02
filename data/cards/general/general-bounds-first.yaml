@@ -1,7 +1,7 @@
 id: general-bounds-first
 domain: general
 name: 上下界先行
-applicableWhen: 需要先确定答案上下界、再逐步收敛的估算或推理任务；不适用于边界本身无意义的开放问题。
+applicableWhen: 需要先确定答案上下界、再逐步收敛的估算或推理任务；不适用于与该结构无关的任务。
 steps:
   - 找出显然成立的上下界
   - 检查边界是否已足够回答任务

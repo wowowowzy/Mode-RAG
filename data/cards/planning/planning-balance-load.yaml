@@ -1,7 +1,7 @@
 id: planning-balance-load
 domain: planning
 name: 负荷均衡
-applicableWhen: 要求各产线每日负荷尽量均衡、避免个别产线过载的排产任务；不适用于交期极紧、必须先保完工时间的场景。
+applicableWhen: 多个资源的负荷要尽量均衡、避免个别资源过载的分配任务；不适用于与该结构无关的任务。
 steps:
   - 计算各产线每日的目标负荷
   - 按当前负荷从低到高选择落点

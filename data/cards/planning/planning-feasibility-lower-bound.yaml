@@ -1,7 +1,7 @@
 id: planning-feasibility-lower-bound
 domain: planning
 name: 可行性下界先验
-applicableWhen: 需要先判断排产是否可行、再决定是否求解的规划任务；不适用于约束宽松、显然有解的简单分配。
+applicableWhen: 需要先判断任务是否可行、再决定是否求解的规划任务；不适用于与该结构无关的任务。
 steps:
   - 计算总需求工时与总可用工时
   - 计算单张订单的最小占用下界

@@ -1,7 +1,7 @@
 id: planning-precedence-backward
 domain: planning
 name: 交期倒推
-applicableWhen: 交期固定、需要从最晚完成日倒推开工时间的排产任务；不适用于没有明确终点的开放式规划。
+applicableWhen: 终期固定、需从最晚完成时间倒推开工的任务；不适用于与该结构无关的任务。
 steps:
   - 从最晚完成日向前倒推每道工序的最晚开工时间
   - 逐级向前传递，得到每单的最晚时间窗

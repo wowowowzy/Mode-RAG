@@ -1,7 +1,7 @@
 id: planning-capacity-first
 domain: planning
 name: 容量先行排布
-applicableWhen: 多条产线按工时容量分配订单、要求负荷均衡的排产任务；不适用于以截止日先后为唯一约束的排产。
+applicableWhen: 每个资源每天有工时上限、主要难点是按容量摊平总工时的排程任务；不适用于与该结构无关的任务。
 steps:
   - 汇总每个工作日每条产线的可用工时
   - 按单张订单所需工时从大到小排序，先安置最难放的
