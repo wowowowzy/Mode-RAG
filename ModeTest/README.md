@@ -1,5 +1,7 @@
 # ModeTest
 
+> 本工程是 [SeekAI](../README.md) 单仓库的一部分。完整环境要求、JEV 运行时包与一键启动见仓库根 README。
+
 评测项目：验证 ModeRouter 注入的「推理骨架」是否真的改变执行模型的输出质量。
 
 > ⚠️ **目录结构要求**
@@ -36,7 +38,7 @@ java -jar target\modetest-1.0.0.jar           # 18090
 
 # 3) 起前端
 cd web
-npm run dev                                    # 5173（node_modules 已存在，无需 npm install）
+npm run dev                                    # 5173（首次克隆后需先 npm install）
 ```
 
 浏览器打开 `http://127.0.0.1:5173`。没有登录，直接进入。
