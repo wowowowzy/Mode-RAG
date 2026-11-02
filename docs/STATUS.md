@@ -47,12 +47,18 @@
 
 | 项 | 值 |
 | --- | --- |
-| 温度 T | 见 `application.yml` 的 `moderoute.decider.temperature` |
-| 拟合脚本 | `tools/fit-temperature.py`（val 拟合，test 只报告） |
-| 标签来源 | `tasks.jsonl` 的 `acceptableCards` |
+| 温度 T | `0.72`（`moderoute.decider.temperature`） |
+| 拟合样本 | val 63 条（正例 39.7%），test 125 条只报告 |
+| val ECE | 0.1095 |
+| test ECE | 未标定 0.1396 → 标定 0.0852 |
+| 拟合脚本 | `tools/fit-temperature.py`（网格搜索 0.5–3.0，步长 0.01） |
+| 标签来源 | `tasks.jsonl` 的 `acceptableCards`；FALLBACK 且该任务有可接受卡记为负例 |
 | 重跑触发条件 | 卡片库改版 / 换 embedding 模型 / 换 JEV 版本 |
+| 补跑脚本 | `tools/collect-decisions.py`（断点续跑，188 条约 25 分钟） |
 
 > 温度缩放是保序变换，**不改变 argmax**，所以调整 T 不影响任何 INJECT / FALLBACK 判定，只影响 `meta.confidence` 的数值。
+>
+> **标签口径偏严**：正例按「argmax 命中的卡在 acceptableCards 里」判定，一张任务往往只列 2–3 张可接受卡，因此 39.7% 的正例比例不代表选卡准确率，只代表严格口径下的命中率。
 
 ## 评测（独立项目）
 

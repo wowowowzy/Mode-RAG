@@ -74,7 +74,8 @@ def main():
     args = parser.parse_args()
 
     tasks = load_tasks(Path(args.tasks))
-    samples = []
+    # 同一任务可能跑过多次（补跑/重试），只保留最新一条，避免重复样本影响 ECE
+    samples_by_hash = {}
     skipped_no_prob = 0
     for row in load_audit(Path(args.audit_dir)):
         if row.get("libraryVersion") != args.version:
@@ -97,12 +98,13 @@ def main():
         else:
             label = 1 if best_card in acceptable else 0
 
-        samples.append({
+        samples_by_hash[row.get("taskSha256")] = {
             "raw": raw,
             "label": label,
             "split": (task.get("meta") or {}).get("split", ""),
             "action": (row.get("gate") or {}).get("action"),
-        })
+        }
+    samples = list(samples_by_hash.values())
 
     print(f"可用样本 {len(samples)} 条（版本 {args.version}），跳过无概率记录 {skipped_no_prob} 条")
     for split in ("train", "val", "test"):

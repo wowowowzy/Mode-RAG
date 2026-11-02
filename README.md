@@ -205,7 +205,9 @@ task ──embedding──> 余弦 top-k（内存扫描）
 - **选项必须是单字母 A–Z**：这类引擎靠预填位置的 logit 出概率，多 token 标签会退化。因此 `topK` 上限是 26，且 None 要占一位——实际最多 25 张真实卡。
 - **字母按 cardId 字典序映射**，不按召回分数：分数会随 embedding 版本变化，按分数排会破坏可复现性。
 - **精判只看 `applicableWhen`**：决策模型有上下文稀释问题，`steps` / `failureModes` 不进精判输入。
-- **置信度必须自行重标定**：原始 softmax ECE 很差；温度只在验证集上拟合，测试集只报告。
+- **置信度已做温度标定**：T=0.72，在 val（63 条）上最小化 ECE 拟合，test（125 条）只报告。
+  test ECE 从 0.1396 降到 0.0852。拟合脚本 `tools/fit-temperature.py`，标签来自
+  `tasks.jsonl` 的 `acceptableCards`。温度是保序变换，不改变 argmax；卡片库或模型变更后需重跑。
 - **48 张 / 3 域 × 16 张**：单次只召回 8 张，占全库 16.7%，先粗筛再精判的级联才有意义。
 - **向量存 SQLite（WAL），检索走 sqlite-vec**：普通表存 float32 BLOB，距离用 `vec_distance_cosine()`；不用 `vec0` 虚拟表，因为它的维度建表即定死，换 embedding 模型就要迁移。实测 48×1024 的 top-8 约 258 µs，仍是端到端 0.08% 量级。
 - **删除即重算**：`(库版本, 模型, 卡片集合, 维度)` 任一不匹配都视为未就绪，整批重算；删掉 `var/moderoute.db` 重启，响应逐字节不变。

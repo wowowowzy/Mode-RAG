@@ -1,8 +1,13 @@
 package com.challenger.moderoute.common.util;
 
 /**
- * 温度缩放。原始 softmax 校准很差（社区实测 ECE 约 0.47），
- * 温度只在验证集上拟合，测试集只用于报告。
+ * 温度缩放。原始 softmax 校准很差，需要用验证集拟合一个温度再报置信度。
+ *
+ * 当前 T 由 tools/fit-temperature.py 在 val（63 条）上最小化 ECE 拟合，
+ * 测试集只用于报告：test ECE 0.1396 → 0.0852。
+ * T<1 表示原始分布偏保守；T>1 表示过度自信。
+ *
+ * 注意这是保序变换，不改变 argmax，所以调整 T 不影响任何 INJECT / FALLBACK 判定。
  */
 public final class Calibrator {
 
