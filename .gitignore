@@ -1,0 +1,42 @@
+# ---- 构建产物 ----
+target/
+dist/
+out/
+build/
+web/dist/
+
+# ---- 依赖 ----
+node_modules/
+.venv/
+__pycache__/
+*.py[cod]
+
+# ---- 本地配置与凭据（只提交 .example）----
+.env
+.env.local
+*.local
+
+# ---- 运行产物 ----
+var/
+logs/
+runs/
+*.log
+*.db
+*.db-wal
+*.db-shm
+
+# ---- 模型与分发包（体积大，不入库）----
+# JEV 推理引擎的 Python 环境与 1.5GB 权重单独分发，解压后即为 Jev-Style/
+Jev-Style/
+*.safetensors
+*.zip
+*.tar.gz
+!*.sha256
+
+# ---- IDE / 系统 ----
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db
+desktop.ini
