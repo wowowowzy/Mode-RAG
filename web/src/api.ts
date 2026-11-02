@@ -58,6 +58,15 @@ export interface TestRun {
   error: string | null
 }
 
+/** 正在生成中的对比。不落库，来自服务端内存。 */
+export interface ActiveRun {
+  taskId: string
+  domain: string
+  phase: string
+  startedAt: string
+  elapsedMs: number
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
     headers: { 'Content-Type': 'application/json' },
@@ -82,5 +91,6 @@ export const api = {
   run: (taskId: string) =>
     request<TestRun>('/api/runs', { method: 'POST', body: JSON.stringify({ taskId }) }),
   runs: (limit = 50) => request<TestRun[]>(`/api/runs?limit=${limit}`),
+  activeRuns: () => request<ActiveRun[]>('/api/runs/active'),
   runDetail: (id: number | string) => request<TestRun>(`/api/runs/${id}`)
 }

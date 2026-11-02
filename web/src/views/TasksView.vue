@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { api, type TaskView } from '../api'
 
@@ -12,6 +12,17 @@ const loading = ref(true)
 const error = ref('')
 const running = ref(false)
 const askConfirm = ref(false)
+const elapsed = ref(0)
+
+// 一次双臂跑 40–130 秒。用户很可能中途切到「测试记录」去看进度，
+// 这时组件已卸载，完成后的 router.push 会把人家从正在看的页面拽走。
+let alive = true
+let timer: number | undefined
+
+onUnmounted(() => {
+  alive = false
+  if (timer !== undefined) clearInterval(timer)
+})
 
 const domainName = computed(() => {
   if (props.domain === 'planning') return '约束规划'
@@ -39,13 +50,24 @@ async function startTest() {
   if (!selected.value || running.value) return
   askConfirm.value = false
   running.value = true
+  error.value = ''
+  elapsed.value = 0
+  const startedAt = Date.now()
+  timer = window.setInterval(() => {
+    elapsed.value = (Date.now() - startedAt) / 1000
+  }, 200)
   try {
     const run = await api.run(selected.value.taskId)
-    router.push(`/runs/${run.id}`)
+    // 已经离开本页就不要抢跳转，用户此刻可能正盯着记录页
+    if (alive) router.push(`/runs/${run.id}`)
   } catch (e) {
     error.value = e instanceof Error ? e.message : '测试失败'
   } finally {
     running.value = false
+    if (timer !== undefined) {
+      clearInterval(timer)
+      timer = undefined
+    }
   }
 }
 </script>
@@ -94,13 +116,17 @@ async function startTest() {
         </div>
         <button
           type="button"
-          class="rounded-lg bg-[#3a3a3c] px-4 py-2 text-sm text-white/90 transition-colors duration-200 ease-out hover:bg-white/10 active:opacity-80"
+          class="rounded-lg bg-[#3a3a3c] px-4 py-2 text-sm text-white/90 transition-colors duration-200 ease-out hover:bg-white/10 active:opacity-80 disabled:opacity-60"
           :disabled="running"
           @click="askConfirm = true"
         >
-          {{ running ? '测试中…' : '用这个任务测试' }}
+          {{ running ? `测试中… ${elapsed.toFixed(0)}s` : '用这个任务测试' }}
         </button>
       </div>
+
+      <p v-if="running" class="mt-3 rounded-lg border border-white/8 bg-[#1c1c1e] px-3 py-2 text-xs leading-relaxed text-white/50">
+        正在跑两臂，单条约 40–130 秒。可以切到「测试记录」看实时进度，那条任务会显示在顶部，不会因为离开本页而中断。
+      </p>
 
       <div class="mt-5">
         <h3 class="font-serif text-sm font-semibold text-white/95">任务描述</h3>

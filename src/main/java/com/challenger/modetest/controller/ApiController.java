@@ -1,6 +1,7 @@
 package com.challenger.modetest.controller;
 
 import com.challenger.modetest.domain.TestRun;
+import com.challenger.modetest.dto.ActiveRunView;
 import com.challenger.modetest.dto.CardSummaryView;
 import com.challenger.modetest.dto.DomainView;
 import com.challenger.modetest.dto.TaskView;
@@ -69,12 +70,22 @@ public class ApiController {
         return compareService.compare(request.taskId());
     }
 
+    /**
+     * 正在生成中的对比。一次双臂要跑 40–130 秒，这段时间记录还没落库，
+     * 前端必须靠这个接口才能看到「任务正在跑」而不是以为点了没反应。
+     */
+    @GetMapping("/runs/active")
+    public List<ActiveRunView> activeRuns() {
+        return compareService.active();
+    }
+
     @GetMapping("/runs")
     public List<TestRun> runs(@RequestParam(defaultValue = "50") int limit) {
         return runRepository.list(Math.max(1, Math.min(limit, 200)));
     }
 
-    @GetMapping("/runs/{id}")
+    /** id 限定为数字，避免 /runs/active 之类的字面路径被当成 id。 */
+    @GetMapping("/runs/{id:\\d+}")
     public TestRun run(@PathVariable long id) {
         return runRepository.find(id)
                 .orElseThrow(() -> new IllegalArgumentException("记录不存在: " + id));

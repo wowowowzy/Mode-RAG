@@ -78,11 +78,18 @@ ours:      task ──> POST /v1/enhance ──> prompt ──> ChatClient ─�
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
 | GET | `/api/domains` | 三个域与任务数 |
+| GET | `/api/cards/summary` | 各域卡片数（来自 ModeRouter，60s 缓存） |
 | GET | `/api/tasks?domain=planning` | 任务列表 |
 | GET | `/api/tasks/{taskId}` | 单任务详情 |
-| POST | `/api/runs` | 跑一次双臂，返回完整记录 |
+| POST | `/api/runs` | 跑一次双臂，返回完整记录（阻塞 40–130 秒） |
+| GET | `/api/runs/active` | **正在生成中的对比**（内存态，不落库） |
 | GET | `/api/runs?limit=50` | 记录列表（不含正文） |
-| GET | `/api/runs/{id}` | 记录详情（含两份输出） |
+| GET | `/api/runs/{id}` | 记录详情（含两份输出），id 限定为数字 |
+
+> `POST /api/runs` 是同步阻塞的：一次双臂要跑 40–130 秒，期间数据库里还没有记录。
+> 前端因此轮询 `/api/runs/active` 展示「生成中 + 当前阶段 + 已用时间」，
+> 否则用户点完按钮在记录页看不到任何东西。该状态只存内存——进程重启后不可能有
+> 还在跑的任务，写库反而会留下永远停在 PENDING 的僵尸记录。
 
 ## 配置
 
