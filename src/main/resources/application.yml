@@ -1,0 +1,36 @@
+spring:
+  application:
+    name: modetest
+  config:
+    # 复用服务项目的网关与凭据，只读不复制；
+    # 本目录 .env.local 只放本项目的覆盖项（如执行模型），后导入的优先
+    import:
+      - optional:file:../ModeRouter/.env.local[.properties]
+      - optional:file:./.env.local[.properties]
+  jackson:
+    default-property-inclusion: always
+
+server:
+  port: 18090
+
+modetest:
+  # ModeRouter 服务地址
+  router-url: ${MODETEST_ROUTER_URL:http://127.0.0.1:18080}
+  router-timeout-ms: 30000
+  tasks-file: ${MODETEST_TASKS:./data/tasks/tasks.jsonl}
+  sqlite-path: ${MODETEST_DB:./var/modetest.db}
+  chat:
+    temperature: 0.2
+
+spring.ai.openai:
+  base-url: ${OPENAI_BASE_URL:}
+  api-key: ${OPENAI_API_KEY:}
+  chat:
+    options:
+      model: ${OPENAI_MODEL:qwen3.7-flash}
+      temperature: ${modetest.chat.temperature}
+
+logging:
+  level:
+    root: WARN
+    com.challenger.modetest: INFO
