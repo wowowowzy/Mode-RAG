@@ -1,0 +1,11 @@
+# 批处理与脚本：强制以 CRLF 检出，避免非 Windows 平台克隆后 .bat 无法执行
+# 注意：start.bat / stop.bat 为 GBK 编码，GBK 的尾字节范围 0x40–0xFE 不含 0x0A/0x0D，
+# 因此换行归一化不会破坏多字节字符。
+*.bat  text eol=crlf
+*.ps1  text eol=crlf
+
+# 二进制：明确标记，避免任何转换
+*.jar  binary
+*.dll  binary
+*.so   binary
+*.db   binary
