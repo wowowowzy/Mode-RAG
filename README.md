@@ -96,6 +96,9 @@ copy ModeTest\.env.local.example ModeTest\.env.local
 
 ### 3. 首次构建
 
+> 这一步只需做一次。`start.bat` **不会**替你编译，它检测到 `target\*.jar` 或 `node_modules` 缺失时，
+> 会直接列出下面三条命令并退出，不会留下半启动的状态。
+
 ```powershell
 cd ModeRouter ; mvn -q -DskipTests package ; cd ..
 cd ModeTest   ; mvn -q -DskipTests package ; cd ..
@@ -105,6 +108,8 @@ cd ModeTest\web ; npm install ; cd ..\..
 ### 4. 启动
 
 双击 **`start.bat`**。它会按顺序起 JEV → ModeRouter → ModeTest → 前端，并在每步等待端口就绪（ModeRouter 还会等 `/healthz` 返回 `UP`，确保向量库预热完成再放行）。
+
+启动前它会按当前位置重写 `Jev-Style\.venv\pyvenv.cfg` —— JEV 分发包自带的 venv 记录的仍是打包时的绝对路径，不重写会报 `No Python at ...`。
 
 大约 40–60 秒后浏览器打开 <http://127.0.0.1:5173>。
 
@@ -173,6 +178,12 @@ curl.exe -X POST http://127.0.0.1:18080/v1/enhance `
 
 **`缺少 sqlite-vec 扩展`**
 `ModeRouter/lib/native/vec0.dll`（283KB）**已随仓库提供**。若被误删，执行 `powershell -ExecutionPolicy Bypass -File ModeRouter\tools\fetch-sqlite-vec.ps1` 重新下载并校验 SHA256。
+
+**JEV 窗口一闪而过，或报 `No Python at '...'`**
+JEV 分发包里的 `.venv` 记录的是打包时的绝对路径，解压到别处就失效。`start.bat` 每次启动前会按当前位置重写 `Jev-Style\.venv\pyvenv.cfg`，正常不会遇到。若手动启动，请用 `Jev-Style\start-jev.bat`（它同样会先修配置），**不要**直接调 `.venv\Scripts\python.exe`。
+
+**`start.bat` 报「[缺少] ...」然后退出**
+还没构建，或 `node_modules` 没装。按屏幕上的三条命令执行一次即可，不需要重复。
 
 **端口被占用**
 四个端口 `8765 / 18080 / 18090 / 5173`。先跑 `stop.bat` 再启动；`start.bat` 本身也会跳过已在运行的服务。
