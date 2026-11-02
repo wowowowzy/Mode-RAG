@@ -2,7 +2,7 @@ package com.challenger.moderoute.common.util;
 
 /**
  * 极简 token 估算：中日韩字符按 1 token，连续西文字母数字按 4 字符 1 token，
- * 其余每个非空白符号按 1 token。不用来精确计费，只用来执行 budgetTokens 上限。
+ * 其余每个非空白符号按 1 token。不用来精确计费，只用于审计里的 estimatedTokens 观测。
  */
 public final class TokenEstimator {
 

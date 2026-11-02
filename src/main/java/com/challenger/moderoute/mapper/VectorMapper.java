@@ -26,5 +26,11 @@ public interface VectorMapper {
     /** 返回按余弦相似度降序的前 limit 张卡；调用前应已确认 ready()。 */
     List<ScoredCard> topK(String libraryVersion, String model, float[] query, int limit);
 
-    void save(String libraryVersion, String model, List<String> cardIds, List<float[]> vectors);
+    /**
+     * 持久化向量。
+     *
+     * @return true 表示已落盘；false 表示仅内存可用，重启后需要重算。
+     *         实现不应抛异常——持久化失败是「可降级」而不是「致命」。
+     */
+    boolean save(String libraryVersion, String model, List<String> cardIds, List<float[]> vectors);
 }

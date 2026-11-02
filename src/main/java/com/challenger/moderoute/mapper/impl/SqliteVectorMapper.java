@@ -132,13 +132,23 @@ public final class SqliteVectorMapper implements VectorMapper, AutoCloseable {
     }
 
     @Override
-    public void save(String libraryVersion, String model, List<String> cardIds, List<float[]> vectors) {
+    public boolean save(String libraryVersion, String model, List<String> cardIds, List<float[]> vectors) {
         if (cardIds.size() != vectors.size()) {
             throw new IllegalArgumentException("卡片数与向量数不一致");
         }
+        if (vectors.isEmpty()) {
+            log.warn("向量为空，跳过持久化");
+            return false;
+        }
         synchronized (lock) {
+            Connection connection;
             try {
-                Connection connection = connection();
+                connection = connection();
+            } catch (SQLException e) {
+                log.warn("向量库连接失败，持久化跳过: {}", e.getMessage());
+                return false;
+            }
+            try {
                 connection.setAutoCommit(false);
                 try {
                     // 只保留当前库快照：旧版本的向量没有消费方，留着只会占空间。
@@ -172,12 +182,15 @@ public final class SqliteVectorMapper implements VectorMapper, AutoCloseable {
                 } catch (Exception e) {
                     connection.rollback();
                     throw e;
+                } finally {
+                    connection.setAutoCommit(true);
                 }
             } catch (Exception e) {
-                log.warn("写向量库失败（不影响服务，下次启动会重算）: {}", e.getMessage());
-                return;
+                log.warn("写向量库失败（内存仍可用，重启后会重算）: {}", e.getMessage());
+                return false;
             }
             checkpoint();
+            return true;
         }
     }
 

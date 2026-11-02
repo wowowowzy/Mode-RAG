@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 /**
- * 粗筛。检索交给 VectorMapper（SQLite 里走 vec_distance_cosine，文件版走进程内余弦），
+ * 粗筛。优先走内存向量（进程内余弦），内存没有副本时回落到 VectorMapper。
  * 这里只负责把任务向量化并做参数收口。
  */
 @Service
@@ -50,13 +50,16 @@ public class RecallServiceImpl implements RecallService {
 
         int limit = Math.min(topK, MAX_CARDS_FOR_DECISION);
         try {
-            List<ScoredCard> scored = vectorStore.topK(
-                    library.version(), embeddingBackend.name(), query, limit);
+            List<ScoredCard> scored = libraryService.topKInMemory(query, limit)
+                    .orElseGet(() -> vectorStore.topK(library.version(), embeddingBackend.name(), query, limit));
             if (scored.isEmpty()) {
                 throw new RecallException("向量存储未返回候选");
             }
             return scored;
         } catch (RuntimeException e) {
+            if (e instanceof RecallException recallException) {
+                throw recallException;
+            }
             throw new RecallException("向量检索失败: " + e.getMessage(), e);
         }
     }

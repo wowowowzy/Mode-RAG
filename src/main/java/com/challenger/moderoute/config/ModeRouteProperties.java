@@ -10,8 +10,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "moderoute")
 public class ModeRouteProperties {
 
-    /** 卡片种子目录，启动时同步进 SQLite。 */
-    private String cardsDir = "./cards";
+    /** 卡片种子目录，启动时同步进 SQLite。默认与 application.yml 保持一致。 */
+    private String cardsDir = "./data/cards";
 
     private final Recall recall = new Recall();
     private final Decider decider = new Decider();
@@ -143,11 +143,12 @@ public class ModeRouteProperties {
 
     public static class Decider {
 
-        /** jev-local / jev-api / mock / rule。 */
+        /** jev-local / jev-api / mock。rule 由 RuleFallback 内部处理，不是可配置的 provider。 */
         private String provider = "jev-local";
         private String baseUrl = "http://127.0.0.1:8765";
         private String apiKey = "";
-        private int timeoutMs = 5_000;
+        /** 必须 ≥ JEV 单次耗时（实测 2–15 s）。默认与 application.yml 保持一致。 */
+        private int timeoutMs = 30_000;
         private int connectTimeoutMs = 1_000;
         /** 我们自己的温度缩放系数，只在验证集上拟合；引擎自带温度是另一回事。 */
         private double temperature = 1.0;
@@ -228,7 +229,8 @@ public class ModeRouteProperties {
     public static class Audit {
 
         private boolean enabled = true;
-        private String dir = "./runs/audit";
+        /** 默认与 application.yml 保持一致。 */
+        private String dir = "./var/audit";
 
         public boolean isEnabled() {
             return enabled;
