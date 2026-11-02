@@ -45,8 +45,18 @@ function shortTime(value: string) {
   return value.replace('T', ' ').slice(0, 19)
 }
 
+/**
+ * 后端返回的是纳秒精度（如 2026-11-02T08:49:55.036940100Z）。
+ * ECMAScript 只保证支持 3 位小数，V8 能容忍更多但 Safari/Firefox 未必，
+ * 因此先截到 3 位再解析。
+ */
+function parseIso(value: string) {
+  const matched = value.match(/^(.*\.\d{3})\d*(Z|[+-]\d{2}:\d{2})$/)
+  return Date.parse(matched ? matched[1] + matched[2] : value)
+}
+
 function elapsedOf(run: ActiveRun) {
-  const started = Date.parse(run.startedAt)
+  const started = parseIso(run.startedAt)
   if (Number.isNaN(started)) return (run.elapsedMs / 1000).toFixed(1)
   return Math.max(0, (nowTick.value - started) / 1000).toFixed(1)
 }
