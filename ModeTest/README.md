@@ -1,6 +1,6 @@
 # ModeTest
 
-> 本工程是 [SeekAI](../README.md) 单仓库的一部分。完整环境要求、JEV 运行时包与一键启动见仓库根 README。
+> 本工程是 [ModeRAG](../README.md) 单仓库的一部分。完整环境要求、JEV 运行时包与一键启动见仓库根 README。
 
 评测项目：验证 ModeRouter 注入的「推理骨架」是否真的改变执行模型的输出质量。
 

@@ -1,4 +1,4 @@
-# SeekAI
+# ModeRAG
 
 **推理骨架注入（Reasoning-Skeleton Injection）**：给定任务文本，从 48 张「推理模式卡」里判断该不该注入、注入哪一张，返回一段可直接拼进 prompt 的文本。
 
@@ -51,9 +51,9 @@ Vite (5173) ──► ModeTest (18090) ──► ModeRouter (18080) ──► JE
 克隆后把 `jev-runtime.zip` 解压到仓库根，最终应为：
 
 ```
-SeekAI/
-├─ ModeRouter/          ← 本仓库
-├─ ModeTest/            ← 本仓库
+ModeRAG/
+├─ ModeRouter/          ← 后端服务：召回 / 精判 / 门控 / 渲染
+├─ ModeTest/            ← 评测台：双臂对照 + 前端
 ├─ Jev-Style/           ← 解压 jev-runtime.zip 得到，不入库
 ├─ start.bat            ← 一键启动四个服务
 ├─ stop.bat             ← 按端口停止
