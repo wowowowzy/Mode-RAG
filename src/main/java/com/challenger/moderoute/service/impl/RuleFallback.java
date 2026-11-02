@@ -11,6 +11,7 @@ import com.challenger.moderoute.entity.ScoredCard;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -32,6 +33,10 @@ public class RuleFallback {
     public RuleFallback(ModeRouteProperties properties) {
         this.minScore = properties.getDecider().getRuleMinScore();
         this.stripNegativeClause = properties.getRecall().isStripNegativeClause();
+        if (!(minScore > 0)) {
+            throw new IllegalArgumentException(
+                    "moderoute.decider.rule-min-score 必须 > 0，否则降级路径永远不会回退（当前 " + minScore + "）");
+        }
     }
 
     public Decision decide(String task, CardLibrary library, int maxCandidates) {
@@ -50,25 +55,24 @@ public class RuleFallback {
         top.forEach(item -> byId.put(item.cardId(), item.score()));
 
         double[] probabilities = new double[options.size()];
-        double best = 0;
-        double sum = 0;
-        for (int i = 0; i < options.size(); i++) {
-            OptionSet.Option option = options.options().get(i);
-            if (option.isNone()) {
-                continue;
-            }
-            double weight = Math.max(0, byId.getOrDefault(option.cardId(), 0.0));
-            probabilities[i] = weight;
-            best = Math.max(best, weight);
-            sum += weight;
+        int noneIndex = options.size() - 1;
+        for (int i = 0; i < noneIndex; i++) {
+            probabilities[i] = Math.max(0d, byId.getOrDefault(options.options().get(i).cardId(), 0d));
         }
+        // None 的代表分数就是阈值本身：低于阈值的卡没有资格胜出，
+        // 于是「所有卡都不合适」时 None 自然成为最大项。
+        probabilities[noneIndex] = Math.max(0d, minScore);
 
-        if (best < minScore || sum <= 0) {
-            probabilities = new double[options.size()];
-            probabilities[options.size() - 1] = 1.0;
+        double sum = 0d;
+        for (double value : probabilities) {
+            sum += value;
+        }
+        if (sum <= 0d) {
+            Arrays.fill(probabilities, 0d);
+            probabilities[noneIndex] = 1d;
         } else {
             for (int i = 0; i < probabilities.length; i++) {
-                probabilities[i] = probabilities[i] / sum;
+                probabilities[i] /= sum;
             }
         }
         return new Decision("rule", options, probabilities, probabilities, 1.0, null);

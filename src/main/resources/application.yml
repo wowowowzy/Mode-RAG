@@ -35,7 +35,10 @@ moderoute:
     connect-timeout-ms: 1000
     # 我们自己的温度缩放，只在验证集上拟合；引擎自带温度不在这里。
     temperature: ${MODEROUTE_TEMPERATURE:1.0}
-    rule-min-score: 0.02
+    # 规则降级的 None 代表分数：候选卡的最高相似度 <= 该值时回退。
+    # 取值依据 tools/rule-threshold.py 对 188 条任务 × 48 张卡的实测：
+    #   最高相似度 P25=0.042 / P50=0.047 / max=0.121，取 0.04 对应约 22% 回退。
+    rule-min-score: ${MODEROUTE_RULE_MIN_SCORE:0.04}
   gate:
     # 默认 0：注入与否完全由「None 是否胜出」决定，不做阈值工程。
     inject-floor: ${MODEROUTE_INJECT_FLOOR:0.0}

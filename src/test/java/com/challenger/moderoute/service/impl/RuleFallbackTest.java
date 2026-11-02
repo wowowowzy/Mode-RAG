@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class RuleFallbackTest {
 
@@ -61,5 +62,39 @@ class RuleFallbackTest {
         Decision second = fallback(0.02).decide("订单带最晚完成日，需要排产", library(), 8);
         assertThat(second.options().options()).isEqualTo(first.options().options());
         assertThat(second.probabilities()).containsExactly(first.probabilities());
+    }
+
+    @Test
+    void 所有卡都低于阈值时回退() {
+        // 「今天午饭吃什么」与三张卡没有任何共同 bigram
+        Decision decision = fallback(0.04).decide("今天午饭吃什么比较好", library(), 8);
+        assertThat(decision.argmaxLetter()).isEqualTo(decision.options().noneLetter());
+        assertThat(decision.maxProbability())
+                .isCloseTo(1.0, org.assertj.core.data.Offset.offset(1e-9));
+        assertThat(Gate.decide(decision, 0.0).action()).isEqualTo(GateAction.FALLBACK);
+    }
+
+    @Test
+    void 阈值参与竞争且None概率可解释() {
+        Decision decision = fallback(0.04).decide("产线每日可用工时有限，订单需要按容量排产", library(), 8);
+        assertThat(decision.argmaxLetter()).isNotEqualTo(decision.options().noneLetter());
+
+        // None 的代表分数是 minScore，所以它的概率不应为 0
+        int noneIndex = decision.options().size() - 1;
+        assertThat(decision.probabilities()[noneIndex]).isGreaterThan(0d);
+        double sum = 0d;
+        for (double p : decision.probabilities()) {
+            sum += p;
+        }
+        assertThat(sum).isCloseTo(1.0, org.assertj.core.data.Offset.offset(1e-9));
+    }
+
+    @Test
+    void 阈值非正时构造失败() {
+        assertThatThrownBy(() -> fallback(0.0))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("rule-min-score");
+        assertThatThrownBy(() -> fallback(-0.1))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }

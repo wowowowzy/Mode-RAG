@@ -36,10 +36,24 @@ public record Decision(
         return rawProbabilities;
     }
 
+    /** 判定为平票的容差。浮点概率在此范围内视为相等。 */
+    private static final double TIE_EPSILON = 1e-9;
+
+    /**
+     * 取概率最大的选项索引。
+     *
+     * 平票语义：相等时优先 None。理由见 Gate 的类注释——回退必须是候选池里
+     * 一个能赢的选项；若平票总是让字典序最小的卡获胜，None 在结构上永远输。
+     */
     public int argmaxIndex() {
         int best = 0;
         for (int i = 1; i < probabilities.length; i++) {
-            if (probabilities[i] > probabilities[best]) {
+            double current = probabilities[i];
+            double bestValue = probabilities[best];
+            if (current > bestValue + TIE_EPSILON) {
+                best = i;
+            } else if (Math.abs(current - bestValue) <= TIE_EPSILON
+                    && options.options().get(i).isNone()) {
                 best = i;
             }
         }
