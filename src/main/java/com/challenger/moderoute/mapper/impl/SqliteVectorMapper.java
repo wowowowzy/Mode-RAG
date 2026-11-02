@@ -258,7 +258,7 @@ public final class SqliteVectorMapper implements VectorMapper, AutoCloseable {
     private void loadExtension(Connection connection) throws SQLException {
         if (!Files.isRegularFile(extensionPath)) {
             throw new SQLException("缺少 sqlite-vec 扩展: " + extensionPath
-                    + "（执行 tools/fetch-sqlite-vec.ps1 下载）");
+                    + "（仓库已内置该文件；若被误删，执行 tools/fetch-sqlite-vec.ps1 恢复）");
         }
         String path = extensionPath.toString().replace('\\', '/').replace("'", "''");
         try (Statement statement = connection.createStatement()) {

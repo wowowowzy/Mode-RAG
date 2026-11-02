@@ -7,4 +7,4 @@ target/
 var/
 logs/
 *.log
-lib/native/*.dll
+# 原生扩展已入库（283KB，Windows x64 必需）；误删时用 tools/fetch-sqlite-vec.ps1 恢复

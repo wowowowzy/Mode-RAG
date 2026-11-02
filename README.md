@@ -12,16 +12,16 @@
 
 ## 1. 快速启动
 
-前置：JDK 17、Maven 3.9+。
+前置：JDK 17（跑 jar 必须有）；Maven 3.9+ 只在编译时需要。
 
 ```powershell
 # 1) embedding 与精判的配置放 .env.local（已被 .gitignore 忽略）
 #    OPENAI_API_KEY / OPENAI_BASE_URL / OPENAI_EMBEDDING_MODEL
 
-# 2) sqlite-vec 扩展：把 vec0.dll 放到 lib/native/（缺失则服务拒绝启动）
-#    下载：https://github.com/asg017/sqlite-vec/releases/download/v0.1.9/sqlite-vec-0.1.9-loadable-windows-x86_64.tar.gz
+# 2) sqlite-vec 扩展：已随仓库提供 lib/native/vec0.dll，通常无需操作
+#    若被误删：powershell -ExecutionPolicy Bypass -File tools\fetch-sqlite-vec.ps1
 
-# 3) 启动本地精判引擎（依赖与模型都在 D:\Application\Jev-Style）
+# 3) 启动本地精判引擎（依赖与模型在同级目录 ..\Jev-Style）
 powershell -File tools\start-jev.ps1
 
 # 4) 构建并启动服务
@@ -68,7 +68,7 @@ java -jar target\moderoute-1.0.0.jar `
     "action": "INJECT",
     "cardId": "planning-capacity-first",
     "confidence": 0.8241,
-    "libraryVersion": "42858df80a60"
+    "libraryVersion": "a4eaf1689a64"
   }
 }
 ```
@@ -144,7 +144,7 @@ task ──embedding──> 余弦 top-k（内存扫描）
 | `moderoute.recall.embedding` | `openai` | `openai`（任意 OpenAI 兼容 `/v1/embeddings`）或 `mock` |
 | `moderoute.recall.batch-size` | `10` | 单次 embedding 条数，网关限制 ≤20 |
 | `moderoute.recall.sqlite-path` | `./var/moderoute.db` | 向量库位置；删掉即重算 |
-| `moderoute.recall.extension-path` | `./lib/native/vec0.dll` | sqlite-vec 扩展；缺失则启动失败 |
+| `moderoute.recall.extension-path` | `./lib/native/vec0.dll` | sqlite-vec 扩展；已随仓库提供，缺失时用 `tools/fetch-sqlite-vec.ps1` 恢复 |
 | `moderoute.recall.strip-negative-clause` | `true` | 召回向量剔除「不适用于…」 |
 | `moderoute.decider.provider` | `jev-local` | `jev-local` / `jev-api` / `mock` |
 | `moderoute.decider.base-url` | `http://127.0.0.1:8765` | System One 兼容服务 |
@@ -158,7 +158,7 @@ task ──embedding──> 余弦 top-k（内存扫描）
 
 ### 模式卡
 
-`data/cards/<domain>/*.yaml`，48 张 = 3 域 × 8 族 × 2 变体。字段：`id` / `domain` / `name` / `applicableWhen`（≤80 字，必须含「不适用于…」）/ `steps`（4–6）/ `failureModes`（2–4）/ `exitConditions`（1–3）/ `outputContract`。
+`data/cards/<domain>/*.yaml`，48 张 = 3 域 × 16 张（每域 16 种不同策略，没有变体）。字段：`id` / `domain` / `name` / `applicableWhen`（≤80 字，必须含「不适用于…」）/ `steps`（4–6）/ `failureModes`（2–4）/ `exitConditions`（1–3）/ `outputContract`。
 
 **存储方式**：YAML 是种子与编辑格式，运行时唯一读取源是 SQLite 的 `card` 表。
 
@@ -206,7 +206,7 @@ task ──embedding──> 余弦 top-k（内存扫描）
 - **字母按 cardId 字典序映射**，不按召回分数：分数会随 embedding 版本变化，按分数排会破坏可复现性。
 - **精判只看 `applicableWhen`**：决策模型有上下文稀释问题，`steps` / `failureModes` 不进精判输入。
 - **置信度必须自行重标定**：原始 softmax ECE 很差；温度只在验证集上拟合，测试集只报告。
-- **48 张 / 8 族 × 2 变体**：同族两张是受控近邻（全量 vs 增量、构造 vs 修复），top-8 保留率 16.7%，级联召回才有意义。
+- **48 张 / 3 域 × 16 张**：单次只召回 8 张，占全库 16.7%，先粗筛再精判的级联才有意义。
 - **向量存 SQLite（WAL），检索走 sqlite-vec**：普通表存 float32 BLOB，距离用 `vec_distance_cosine()`；不用 `vec0` 虚拟表，因为它的维度建表即定死，换 embedding 模型就要迁移。实测 48×1024 的 top-8 约 258 µs，仍是端到端 0.08% 量级。
 - **删除即重算**：`(库版本, 模型, 卡片集合, 维度)` 任一不匹配都视为未就绪，整批重算；删掉 `var/moderoute.db` 重启，响应逐字节不变。
 
@@ -218,7 +218,7 @@ task ──embedding──> 余弦 top-k（内存扫描）
 2. **Spring AI 只用 `spring-ai-model` 抽象**，OpenAI 兼容传输层自己写（`OpenAiCompatibleEmbeddingModel`）。若引入 `spring-ai-openai`，会把 chat 类一起带进依赖树，「不碰执行模型」就只能靠承诺、不能靠依赖树。换后端仍只改配置。
 3. **召回向量只用 `applicableWhen` 的正面半句**。负例是给「排除」用的，混进相似度会变成正向信号；精判仍看到完整字段。
 4. **注入文本不做长度裁剪**。原先 `budgetTokens`（默认 400）会在预算不足时丢掉失败模式或输出格式示例；现在卡片全文注入，接口不再接受该参数，审计里只保留 `estimatedTokens` 供观察。
-5. **卡片与任务集由同一作者（AI）产出**。「写卡的人不看任务生成器模板」这条纪律在单人 + AI 的开发形态下只能部分执行：任务文本由生成器模板产出、卡片在结构确定后撰写，但无法证明作者隔离。这一点必须写进实验报告的局限章节，不能含糊过去。
+5. **卡片与任务集由同一作者（AI）产出**。「写卡的人不看任务集」这条纪律在单人 + AI 的开发形态下只能部分执行：卡片先行，任务集随后由另一个 agent 按格式规范逐条撰写，但无法证明作者隔离（同一模型家族、同一批评审口径）。这一点必须写进实验报告的局限章节。
 6. **向量落 SQLite，偏离 SPEC「不引入数据库」**。SPEC §3 明确不引数据库；按实际取舍改为 SQLite + sqlite-vec（WAL），运行路径只有这一条。代价是引入 `sqlite-jdbc` 与一个原生扩展（`vec0.dll`，缺失则拒绝启动），数据库只存**派生向量**，不存会话、不存卡片，删掉即重算，接口契约与决策结果不变。
 
 ---
@@ -241,8 +241,8 @@ src/main/java/com/challenger/moderoute/
   config/            配置与 Bean 装配
 data/
   cards/            48 张模式卡（3 域 × 16）
-lib/native/vec0.dll sqlite-vec 扩展（gitignore，按 README 下载）
-tools/              启动脚本（start-jev / run）
+lib/native/vec0.dll sqlite-vec 扩展（已入库；误删用 tools/fetch-sqlite-vec.ps1 恢复）
+tools/              启动与运维脚本（start-jev / run / fetch-sqlite-vec / audit-filter / collect-decisions / fit-temperature / rule-threshold）
 var/                运行时产物（gitignore）
   moderoute.db      卡片表 + 向量表（WAL）
   audit/            审计 JSONL
