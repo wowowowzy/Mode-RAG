@@ -1,0 +1,16 @@
+id: planning-full-replan
+domain: planning
+name: 全量重排
+applicableWhen: 输入大幅变动、既有安排整体失效需要重算的任务；不适用于与该结构无关的任务。
+steps:
+  - 清空既有分配，只保留订单、产线与日期三类原始数据
+  - 统计全局工时需求与全局可用工时
+  - 先按容量约束求一次可行分配
+  - 再加入时序与互斥约束逐条修正
+  - 输出完整 assignments 而不是增量补丁
+failureModes:
+  - 保留旧分配导致新旧约束互相冲突
+  - 只修局部却标称为全量结果
+exitConditions:
+  - 若全局需求超过全局可用工时，立即报告总量不可行并给出差额，不要输出部分排程冒充满分方案
+outputContract: 输出完整 assignments 与逐条 verification，不得只给变更清单

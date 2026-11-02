@@ -1,0 +1,16 @@
+id: debate-value-tradeoff
+domain: debate
+name: 价值取舍代价
+applicableWhen: 双方目标一致但价值排序不同、需说明取舍代价的任务；不适用于与该结构无关的任务。
+steps:
+  - 确认双方共享的最终目标
+  - 列出各自优先保护的价值
+  - 说明为保护该价值需要放弃什么
+  - 比较两种取舍的代价分布
+  - 给出在不同价值排序下的推荐
+failureModes:
+  - 假定存在一个中立的排序
+  - 只讲收益不讲被牺牲的一方
+exitConditions:
+  - 若两种排序都自洽且无法用共同标准比较，输出条件式结论而非单一推荐
+outputContract: 输出 debate_v1，verdict 为条件式：if 价值排序 A then ... else ...

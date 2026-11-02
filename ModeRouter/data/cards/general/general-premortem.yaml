@@ -1,0 +1,16 @@
+id: general-premortem
+domain: general
+name: 事前验尸
+applicableWhen: 方案即将执行、需要提前识别失败风险的任务；不适用于与该结构无关的任务。
+steps:
+  - 假设方案已经失败
+  - 列出导致失败的具体原因
+  - 按可能性与影响排序
+  - 为高优先级原因设计早期信号
+  - 给出针对性预防动作
+failureModes:
+  - 只列外部风险忽略内部执行风险
+  - 把风险清单写成免责声明而不落到动作
+exitConditions:
+  - 若某个风险既无法预防也无法监测，明确指出这是必须接受的残余风险
+outputContract: 分节输出 failure_scenarios / ranked_risks / early_signals / mitigations / accepted_risks

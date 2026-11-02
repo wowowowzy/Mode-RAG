@@ -1,0 +1,16 @@
+id: general-question-decompose
+domain: general
+name: 问题拆解
+applicableWhen: 问题过于笼统、需要拆成可分别回答的子问题；不适用于与该结构无关的任务。
+steps:
+  - 重述问题并界定边界
+  - 拆成互不重叠的子问题
+  - 判断哪些子问题可以立即回答
+  - 按依赖顺序安排回答
+  - 汇总子问题答案
+failureModes:
+  - 拆出的子问题仍然笼统
+  - 拆分后丢失原问题的核心约束
+exitConditions:
+  - 若某个子问题需要外部信息才能回答，明确标注并继续其余部分
+outputContract: 分节输出 restated / sub_questions / dependencies / answers / summary

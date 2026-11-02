@@ -1,0 +1,16 @@
+id: general-first-principles
+domain: general
+name: 第一性原理重推
+applicableWhen: 既有做法可疑、需要从基本约束重新推导方案的任务；不适用于与该结构无关的任务。
+steps:
+  - 列出该问题不可违背的物理或业务约束
+  - 剥离行业惯例与历史做法
+  - 从约束出发推导可行解空间
+  - 与既有做法比较差异
+  - 说明差异带来的收益与代价
+failureModes:
+  - 把惯例当成基本约束
+  - 推导出的方案忽略实施成本
+exitConditions:
+  - 若重推结果与既有做法一致，如实说明既有做法已接近最优，不为新颖而改
+outputContract: 分节输出 constraints / derivation / candidate / comparison / recommendation

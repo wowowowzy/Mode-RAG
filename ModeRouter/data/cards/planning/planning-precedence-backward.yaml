@@ -1,0 +1,16 @@
+id: planning-precedence-backward
+domain: planning
+name: 交期倒推
+applicableWhen: 终期固定、需从最晚完成时间倒推开工的任务；不适用于与该结构无关的任务。
+steps:
+  - 从最晚完成日向前倒推每道工序的最晚开工时间
+  - 逐级向前传递，得到每单的最晚时间窗
+  - 在窗口内从后往前填入可用容量
+  - 检查是否有订单的最晚开工早于允许起点
+  - 输出每单的计划开工与完成时刻
+failureModes:
+  - 倒推时不考虑产线可用工时的日界
+  - 把最晚开工当成必须开工
+exitConditions:
+  - 若某订单的最晚开工早于允许起点，报告该单需加急或外协，不强行压缩工期
+outputContract: 输出 assignments 与 verification，逐单对比最晚开工与实际开工

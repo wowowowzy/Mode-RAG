@@ -1,0 +1,16 @@
+id: planning-mutex-split
+domain: planning
+name: 互斥绕行拆分
+applicableWhen: 允许拆段以避开资源占用的排程任务；不适用于与该结构无关的任务。
+steps:
+  - 确认哪些订单允许拆分以及最小可拆粒度
+  - 为互斥资源排出占用时间轴
+  - 把可拆订单切成若干段，每段落在不同空档
+  - 记录每段的 startHour 与 hours，保证同单各段不重叠
+  - 复核拆分后总工时与原订单一致
+failureModes:
+  - 拆分后总工时变多或变少
+  - 同一订单的两段落在同一时段
+exitConditions:
+  - 若拆分也无法在窗口内放下全部工时，报告剩余缺口并给出已排部分，明确说明不完整
+outputContract: 输出 assignments，同一 order 允许多条记录，但总 hours 必须等于需求

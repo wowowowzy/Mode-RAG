@@ -1,0 +1,16 @@
+id: debate-evidence-gap
+domain: debate
+name: 证据缺口判定
+applicableWhen: 判断争论是否因证据不足而无法下结论的任务；不适用于与该结构无关的任务。
+steps:
+  - 列出双方各自需要的证据
+  - 标记哪些证据已具备、哪些缺失
+  - 判断缺失证据是否可获取
+  - 评估缺失证据对结论的影响量级
+  - 给出补证后的判断路径
+failureModes:
+  - 把「我没看到」当成「不存在」
+  - 对关键缺口轻描淡写后仍下强结论
+exitConditions:
+  - 若关键证据缺失且无法获取，输出「当前信息不足以裁决」并列出需要补充的材料
+outputContract: 输出 debate_v1，verdict 明确写成「不足以裁决」或给出暂定倾向

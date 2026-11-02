@@ -1,0 +1,16 @@
+id: debate-fact-value-split
+domain: debate
+name: 事实与价值分离
+applicableWhen: 争论混杂事实判断与价值取向、需分别处理的任务；不适用于与该结构无关的任务。
+steps:
+  - 把每个分歧点标注为事实分歧或价值分歧
+  - 对事实分歧列出可检验的判据
+  - 对价值分歧列出各自的价值前提
+  - 分别给出两类分歧的处理结论
+  - 说明两类分歧如何共同影响最终判断
+failureModes:
+  - 把价值分歧包装成事实分歧来争胜负
+  - 用事实证据回应价值诉求
+exitConditions:
+  - 若结论主要由价值分歧决定，停止裁决并说明「取决于价值取向」及具体分歧点
+outputContract: 输出 debate_v1，verdict 分「事实结论」与「价值结论」两段

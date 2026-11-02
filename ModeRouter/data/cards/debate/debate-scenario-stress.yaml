@@ -1,0 +1,16 @@
+id: debate-scenario-stress
+domain: debate
+name: 极端情形压测
+applicableWhen: 常规条件下可行、需比较极端情形表现的任务；不适用于与该结构无关的任务。
+steps:
+  - 列出三到四个关键外部变量
+  - 为每个变量设置乐观、基准、悲观三档
+  - 检查方案在悲观组合下的表现
+  - 找出最先失效的环节
+  - 比较各方案的失效边界
+failureModes:
+  - 只测单变量极端而不测组合
+  - 把悲观情形当成预测而非压力测试
+exitConditions:
+  - 若所有方案在悲观组合下都失效，说明该情形已超出方案适用范围，不再比较优劣
+outputContract: 输出 debate_v1，verdict 给出各方案的失效边界而非单一排名

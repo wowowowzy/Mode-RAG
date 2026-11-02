@@ -1,0 +1,16 @@
+id: planning-capacity-first
+domain: planning
+name: 容量先行排布
+applicableWhen: 每个资源每天有工时上限、主要难点是按容量摊平总工时的排程任务；不适用于与该结构无关的任务。
+steps:
+  - 汇总每个工作日每条产线的可用工时
+  - 按单张订单所需工时从大到小排序，先安置最难放的
+  - 每次分配后立即扣减该产线该日的剩余工时
+  - 分配完成后检查是否存在明显超载的产线
+  - 对超载产线优先把整单迁到余量最大的产线
+failureModes:
+  - 只看总工时够不够，忽略单日容量上限
+  - 大单被切碎后仍按一次分配记账，导致重复占用
+exitConditions:
+  - 若某订单在任何产线的单日余量下都放不下且不可拆分，报告不可行并给出缺口工时，不要强行塞入
+outputContract: 输出 assignments 与 verification，每条 verification 对应一个约束 cid

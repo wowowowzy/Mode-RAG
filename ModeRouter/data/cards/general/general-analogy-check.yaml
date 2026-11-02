@@ -1,0 +1,16 @@
+id: general-analogy-check
+domain: general
+name: 类比有效性检验
+applicableWhen: 借助类比解释或迁移方案、需要检验类比是否成立的推理任务；不适用于与该结构无关的任务。
+steps:
+  - 明确源域与目标域
+  - 列出类比依赖的对应关系
+  - 检查哪些对应关系在目标域不成立
+  - 判断失效对应是否影响核心结论
+  - 给出类比可用范围
+failureModes:
+  - 只挑相似点忽略关键差异
+  - 把类比当成证明
+exitConditions:
+  - 若核心对应关系在目标域失效，说明该类比不能用于外推结论
+outputContract: 分节输出 mapping / breaking_points / impact / usable_scope

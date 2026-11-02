@@ -1,0 +1,16 @@
+id: planning-ratio-proportional
+domain: planning
+name: 比例配额分配
+applicableWhen: 按给定比例或配额区间分配总量的任务；不适用于与该结构无关的任务。
+steps:
+  - 计算各对象的目标占比与理论分配量
+  - 先按理论量向下取整分配
+  - 把余量按小数部分从大到小补齐
+  - 检查补齐后是否突破单对象上限
+  - 输出各对象最终量与比例偏差
+failureModes:
+  - 四舍五入后总量不等于原总量
+  - 忽略单对象上限导致比例失真
+exitConditions:
+  - 若上限导致比例与总量无法同时满足，报告冲突并给出两种取舍方案，不擅自选一种
+outputContract: 输出 assignments 与每对象的实际占比、偏差

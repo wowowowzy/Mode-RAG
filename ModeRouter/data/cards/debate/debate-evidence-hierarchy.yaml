@@ -1,0 +1,16 @@
+id: debate-evidence-hierarchy
+domain: debate
+name: 证据强度分层
+applicableWhen: 双方都给出证据、需判断哪边证据更可靠的任务；不适用于与该结构无关的任务。
+steps:
+  - 把证据按来源强度分层：直接数据、案例、类比、断言
+  - 检查每条证据与被证明结论的对应关系
+  - 标出证据之间的冲突
+  - 按强度而不是数量比较双方
+  - 给出当前证据下的倾向性判断
+failureModes:
+  - 用证据条数代替证据强度
+  - 把相关案例当成因果证据
+exitConditions:
+  - 若最强证据也只到类比层级，说明结论只能作为暂定判断，不给确定性裁决
+outputContract: 输出 debate_v1，evidence 逐条标注强度层级

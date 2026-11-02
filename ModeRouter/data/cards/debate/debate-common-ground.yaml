@@ -1,0 +1,16 @@
+id: debate-common-ground
+domain: debate
+name: 共识收缩分歧
+applicableWhen: 分歧看似很大、需要先找共识再缩小分歧的讨论；不适用于与该结构无关的任务。
+steps:
+  - 列出双方都接受的事实
+  - 列出双方都不反对的价值
+  - 在共识基础上重述双方主张
+  - 定位真正分歧的最小集合
+  - 只对最小分歧展开分析
+failureModes:
+  - 把礼貌性认同当成实质共识
+  - 为了找共识而抹平真实分歧
+exitConditions:
+  - 若最小分歧仍无法用事实解决，说明这是立场差异并停止继续论证
+outputContract: 输出 debate_v1，verdict 先列共识再列剩余分歧

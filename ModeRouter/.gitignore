@@ -1,0 +1,10 @@
+target/
+!.mvn/wrapper/maven-wrapper.jar
+.idea/
+*.iml
+.vscode/
+.env.local
+var/
+logs/
+*.log
+# 原生扩展已入库（283KB，Windows x64 必需）；误删时用 tools/fetch-sqlite-vec.ps1 恢复

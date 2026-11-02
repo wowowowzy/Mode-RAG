@@ -1,0 +1,16 @@
+id: planning-mutex-serialize
+domain: planning
+name: 互斥资源串行化
+applicableWhen: 多个任务争用同一资源或时段、需要定先后的排程任务；不适用于与该结构无关的任务。
+steps:
+  - 列出所有互斥资源与各自的争用订单
+  - 为每组互斥订单建立先后顺序
+  - 按顺序把互斥组展开成时间轴上的串行区间
+  - 串行区间之间再安排非互斥订单
+  - 检查是否存在同一时段被两个互斥订单占用
+failureModes:
+  - 只在同一天上互斥，忽略跨天的时间重叠
+  - 把互斥关系当成偏好而不是硬约束
+exitConditions:
+  - 若互斥订单总时长超过资源可用窗口，报告该组不可行，不要靠压缩单张订单时长凑数
+outputContract: 输出 assignments 与 verification，互斥约束必须逐条给出结论

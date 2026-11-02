@@ -1,0 +1,16 @@
+id: planning-greedy-then-repair
+domain: planning
+name: 贪心补排
+applicableWhen: 先给粗略安排、再逐步修掉违规之处的任务；不适用于与该结构无关的任务。
+steps:
+  - 按工时从大到小贪心填入容量最大的空档
+  - 逐条检查约束并列出违例清单
+  - 对每条违例只做最小搬移
+  - 搬移后重新检查全部约束
+  - 直到违例清零或确认无法消除
+failureModes:
+  - 修复一处引入两处新违例却不再复查
+  - 贪心阶段把最难安置的订单留到最后
+exitConditions:
+  - 若连续多轮修复后违例数不再下降，停止并报告残余违例与建议的取舍
+outputContract: 输出 assignments 与 verification，残余违例必须显式列出

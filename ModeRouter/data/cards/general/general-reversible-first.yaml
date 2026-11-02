@@ -1,0 +1,16 @@
+id: general-reversible-first
+domain: general
+name: 可逆优先
+applicableWhen: 决策不确定、需要优先选择可回退路径的行动规划；不适用于与该结构无关的任务。
+steps:
+  - 判断每个选项是否可逆、回退代价多大
+  - 优先选择可低成本回退的选项
+  - 为可逆选项设定回退触发条件
+  - 用小规模试验代替一次性投入
+  - 根据试验结果决定是否加码
+failureModes:
+  - 把「可以改」当成「没有代价」
+  - 对不可逆选项也套用试错逻辑
+exitConditions:
+  - 若所有选项都不可逆，停止试错策略，转为充分论证后再一次性决定
+outputContract: 分节输出 options / reversibility / trial_plan / trigger / decision

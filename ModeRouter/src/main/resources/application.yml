@@ -1,0 +1,61 @@
+spring:
+  application:
+    name: moderoute
+  config:
+    import: optional:file:./.env.local[.properties]
+  jackson:
+    default-property-inclusion: always
+  mvc:
+    problemdetails:
+      enabled: false
+
+server:
+  port: 18080
+  shutdown: graceful
+
+moderoute:
+  cards-dir: ${MODEROUTE_CARDS_DIR:./data/cards}
+  recall:
+    embedding: ${MODEROUTE_EMBEDDING:openai}
+    base-url: ${OPENAI_BASE_URL:}
+    api-key: ${OPENAI_API_KEY:}
+    model: ${OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
+    sqlite-path: ${MODEROUTE_VECTOR_DB:./var/moderoute.db}
+    extension-path: ${MODEROUTE_SQLITE_VEC:./lib/native/vec0.dll}
+    timeout-ms: ${MODEROUTE_EMBEDDING_TIMEOUT_MS:15000}
+    strip-negative-clause: true
+    mock-dimension: 256
+    # 网关限制单次 batch ≤ 20，分片调用。
+    batch-size: 10
+  decider:
+    provider: ${MODEROUTE_DECIDER:jev-local}
+    base-url: ${JEV_BASE_URL:http://127.0.0.1:8765}
+    api-key: ${JEV_API_KEY:}
+    timeout-ms: ${MODEROUTE_DECIDER_TIMEOUT_MS:30000}
+    connect-timeout-ms: 1000
+    # 温度标定：在验证集（63 条）上最小化 ECE 拟合，测试集（125 条）只报告。
+    # 实测 val ECE 0.1095；test ECE 从 0.1396 降到 0.0852。
+    # T<1 说明原始 softmax 偏保守（置信度低于实际准确率）。
+    # 重跑拟合的触发条件：卡片库改版 / 换 embedding 模型 / 换 JEV 版本。
+    temperature: ${MODEROUTE_TEMPERATURE:0.72}
+    # 规则降级的 None 代表分数：候选卡的最高相似度 <= 该值时回退。
+    # 取值依据 tools/rule-threshold.py 对 188 条任务 × 48 张卡的实测：
+    #   最高相似度 P25=0.042 / P50=0.047 / max=0.121，取 0.04 对应约 22% 回退。
+    rule-min-score: ${MODEROUTE_RULE_MIN_SCORE:0.04}
+  gate:
+    # 默认 0：注入与否完全由「None 是否胜出」决定，不做阈值工程。
+    inject-floor: ${MODEROUTE_INJECT_FLOOR:0.0}
+  audit:
+    enabled: ${MODEROUTE_AUDIT:true}
+    dir: ${MODEROUTE_AUDIT_DIR:./var/audit}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    root: WARN
+    com.challenger.moderoute: INFO

@@ -1,0 +1,16 @@
+id: debate-premise-gap
+domain: debate
+name: 前提差异定位
+applicableWhen: 结论不同但论据相似、需定位分歧来源的任务；不适用于与该结构无关的任务。
+steps:
+  - 分别列出双方结论
+  - 提取各自依赖的前提
+  - 对齐相同前提，标出不同前提
+  - 判断不同前提中哪些可被证据检验
+  - 按前提差异解释结论差异
+failureModes:
+  - 把措辞差异当成前提差异
+  - 只比较论据数量不比较论据强度
+exitConditions:
+  - 若关键前提无法用现有信息检验，输出两套结论各自成立的条件，不强行裁决
+outputContract: 输出 debate_v1，verdict 中列出前提差异清单
