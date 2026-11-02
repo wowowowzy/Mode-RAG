@@ -1,0 +1,27 @@
+# 构建
+target/
+out/
+build/
+# 前端构建产物（Vite 输出）
+web/dist/
+dist/
+
+# 依赖
+node_modules/
+.venv/
+__pycache__/
+
+# 本地配置与凭据
+.env
+.env.local
+*.local
+
+# 运行产物
+runs/
+var/
+*.log
+
+# IDE
+.idea/
+*.iml
+.vscode/
