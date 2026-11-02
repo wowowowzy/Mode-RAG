@@ -150,10 +150,17 @@ public class ModeRouteProperties {
         /** 必须 ≥ JEV 单次耗时（实测 2–15 s）。默认与 application.yml 保持一致。 */
         private int timeoutMs = 30_000;
         private int connectTimeoutMs = 1_000;
-        /** 我们自己的温度缩放系数，只在验证集上拟合；引擎自带温度是另一回事。 */
-        private double temperature = 1.0;
-        /** 规则降级时，最低词面相似度；低于该值视为都不合适。 */
-        private double ruleMinScore = 0.02;
+        /**
+         * 我们自己的温度缩放系数，只在验证集上拟合；引擎自带温度是另一回事。
+         * 默认与 application.yml 一致（0.72）。若 yml 丢失仍能拿到标定后的值，
+         * 不会退化成未标定的原始 softmax。
+         */
+        private double temperature = 0.72;
+        /**
+         * 规则降级的 None 代表分数：候选卡最高相似度低于该值时回退。
+         * 默认与 application.yml 一致（0.04，对应约 22% 回退率）。
+         */
+        private double ruleMinScore = 0.04;
 
         public String getProvider() {
             return provider;
