@@ -74,25 +74,25 @@ ModeRAG/
 
 ### 2. 配置网关
 
+**整个仓库只配这一份文件。**
+
 ```powershell
 copy ModeRouter\.env.local.example ModeRouter\.env.local
 ```
 
-填入四项：
+填入：
 
 ```properties
 OPENAI_API_KEY=<你的 key>
 OPENAI_BASE_URL=https://<你的网关>/compatible-mode
 OPENAI_EMBEDDING_MODEL=<embedding 模型名>
+OPENAI_MODEL=<执行模型名>
 JEV_BASE_URL=http://127.0.0.1:8765
 ```
 
-`ModeTest\.env.local` 默认复用上面这份；只有要改执行模型时才需要建：
+其中 `OPENAI_MODEL` 是双臂对照用的执行模型，**只有 ModeTest 读它**；`OPENAI_EMBEDDING_MODEL` 只有 ModeRouter 读。两个项目共用这一份，是因为 `ModeTest/application.yml` 通过 `../ModeRouter/.env.local` 导入它。
 
-```powershell
-copy ModeTest\.env.local.example ModeTest\.env.local
-# 里面写 OPENAI_MODEL=<执行模型名>
-```
+`ModeTest\.env.local` **不需要创建**。只有两种情况才建：要给评测单独换执行模型，或两个项目不在同一父目录（读不到上面那份）。
 
 ### 3. 首次构建
 
