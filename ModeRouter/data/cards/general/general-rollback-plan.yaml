@@ -14,3 +14,11 @@ failureModes:
 exitConditions:
   - 若回退会造成不可接受的数据损失，说明该变更不可逆，需先拆分变更
 outputContract: 分节输出 scope / triggers / owner / steps / cost / verification
+
+taxonomy:
+  family: general
+relations:
+  excludes: []
+  augments: []
+  requires: []
+  verifyWith: []

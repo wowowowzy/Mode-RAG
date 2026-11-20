@@ -28,7 +28,7 @@ public class RunRepository implements AutoCloseable {
 
     private static final String COLUMNS = "id, task_id, domain, created_at, action, card_id, confidence,"
             + " library_version, router_ms, baseline_ms, ours_ms, baseline_prompt_tokens, ours_prompt_tokens,"
-            + " completion_tokens";
+            + " completion_tokens, baseline_score, ours_score, baseline_passed, ours_passed, judge_detail";
 
     private final Path dbPath;
     private Connection connection;
@@ -121,6 +121,27 @@ public class RunRepository implements AutoCloseable {
         }
     }
 
+    /** 回填判定结果。score 为 null 表示该臂无法判定（如解析失败）。 */
+    public Optional<TestRun> updateJudge(long id, Double baselineScore, Double oursScore,
+                                         Integer baselinePassed, Integer oursPassed, String judgeDetail) {
+        synchronized (this) {
+            try (PreparedStatement statement = connection().prepareStatement(
+                    "UPDATE test_run SET baseline_score = ?, ours_score = ?, baseline_passed = ?,"
+                            + " ours_passed = ?, judge_detail = ? WHERE id = ?")) {
+                setDouble(statement, 1, baselineScore);
+                setDouble(statement, 2, oursScore);
+                setInteger(statement, 3, baselinePassed);
+                setInteger(statement, 4, oursPassed);
+                statement.setString(5, judgeDetail);
+                statement.setLong(6, id);
+                statement.executeUpdate();
+            } catch (Exception e) {
+                throw new IllegalStateException("回填判定结果失败: " + e.getMessage(), e);
+            }
+            return find(id);
+        }
+    }
+
     private Connection connection() throws SQLException {
         if (connection != null && !connection.isClosed()) {
             return connection;
@@ -157,6 +178,12 @@ public class RunRepository implements AutoCloseable {
                     + "ours_text TEXT,"
                     + "error TEXT)");
             statement.execute("CREATE INDEX IF NOT EXISTS idx_run_task ON test_run(task_id)");
+            // 判定器结果列（幂等）
+            addColumnIfMissing(created, "baseline_score", "REAL");
+            addColumnIfMissing(created, "ours_score", "REAL");
+            addColumnIfMissing(created, "baseline_passed", "INTEGER");
+            addColumnIfMissing(created, "ours_passed", "INTEGER");
+            addColumnIfMissing(created, "judge_detail", "TEXT");
         } catch (SQLException e) {
             try {
                 created.close();
@@ -170,6 +197,14 @@ public class RunRepository implements AutoCloseable {
         return connection;
     }
 
+    private static void addColumnIfMissing(Connection c, String col, String type) {
+        try (Statement s = c.createStatement()) {
+            s.execute("ALTER TABLE test_run ADD COLUMN " + col + " " + type);
+        } catch (SQLException e) {
+            // 列已存在则忽略
+        }
+    }
+
     private static void setInteger(PreparedStatement statement, int index, Integer value) throws SQLException {
         if (value == null) {
             statement.setNull(index, java.sql.Types.INTEGER);
@@ -178,8 +213,21 @@ public class RunRepository implements AutoCloseable {
         }
     }
 
+    private static void setDouble(PreparedStatement statement, int index, Double value) throws SQLException {
+        if (value == null) {
+            statement.setNull(index, java.sql.Types.REAL);
+        } else {
+            statement.setDouble(index, value);
+        }
+    }
+
     private static Integer getInteger(ResultSet rows, String column) throws SQLException {
         int value = rows.getInt(column);
+        return rows.wasNull() ? null : value;
+    }
+
+    private static Double getDouble(ResultSet rows, String column) throws SQLException {
+        double value = rows.getDouble(column);
         return rows.wasNull() ? null : value;
     }
 
@@ -201,14 +249,21 @@ public class RunRepository implements AutoCloseable {
                 getInteger(rows, "completion_tokens"),
                 withText ? rows.getString("baseline_text") : null,
                 withText ? rows.getString("ours_text") : null,
-                withText ? rows.getString("error") : null);
+                withText ? rows.getString("error") : null,
+                getDouble(rows, "baseline_score"),
+                getDouble(rows, "ours_score"),
+                getInteger(rows, "baseline_passed"),
+                getInteger(rows, "ours_passed"),
+                rows.getString("judge_detail"));
     }
 
     private static TestRun withId(TestRun run, long id) {
         return new TestRun(id, run.taskId(), run.domain(), run.createdAt(), run.action(), run.cardId(),
                 run.confidence(), run.libraryVersion(), run.routerMs(), run.baselineMs(), run.oursMs(),
                 run.baselinePromptTokens(), run.oursPromptTokens(), run.completionTokens(),
-                run.baselineText(), run.oursText(), run.error());
+                run.baselineText(), run.oursText(), run.error(),
+                run.baselineScore(), run.oursScore(), run.baselinePassed(), run.oursPassed(),
+                run.judgeDetail());
     }
 
     @Override

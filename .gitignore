@@ -40,3 +40,7 @@ Jev-Style/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# ---- 笔记区域与本地工作区（不入库） ----
+笔记区域/
+.workbuddy/

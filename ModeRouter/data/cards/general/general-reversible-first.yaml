@@ -14,3 +14,11 @@ failureModes:
 exitConditions:
   - 若所有选项都不可逆，停止试错策略，转为充分论证后再一次性决定
 outputContract: 分节输出 options / reversibility / trial_plan / trigger / decision
+
+taxonomy:
+  family: general
+relations:
+  excludes: []
+  augments: []
+  requires: []
+  verifyWith: []

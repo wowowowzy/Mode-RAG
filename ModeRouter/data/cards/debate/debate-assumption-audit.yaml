@@ -1,7 +1,7 @@
 id: debate-assumption-audit
 domain: debate
 name: 隐含假设审计
-applicableWhen: 需要检查论证中未明说的前提是否成立的任务；不适用于与该结构无关的任务。
+applicableWhen: 审查论证中未言明的前提是否成立、前提真伪决定结论可信度的任务；不适用于只核对推理形式是否谬误。
 steps:
   - 逐句找出论证中隐含的假设
   - 标注每条假设是事实假设还是价值假设
@@ -14,3 +14,11 @@ failureModes:
 exitConditions:
   - 若核心结论完全依赖一条无法验证的假设，明确说明该结论目前不可判定
 outputContract: 输出 debate_v1，concessions 中提示假设被推翻后的结论变化
+
+taxonomy:
+  family: premise
+relations:
+  excludes: [debate-fallacy-check]
+  augments: []
+  requires: []
+  verifyWith: []

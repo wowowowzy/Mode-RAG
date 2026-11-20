@@ -69,9 +69,11 @@ ours:      task ──> POST /v1/enhance ──> prompt ──> ChatClient ─�
 
 | 内容 | 位置 |
 | --- | --- |
-| 任务集（188 条：planning 116 / debate 72） | `data/tasks/tasks.jsonl` |
+| 开发集（188 条：planning 116 / debate 72） | `data/tasks/tasks.jsonl` |
+| 冻结 holdout（40 条：planning 20 / debate 20） | `data/tasks/holdout-frozen.jsonl`（`meta.split=holdout`，不得参与调参） |
 | 任务集生成规范 | `TASKS-SPEC.md` |
 | 测试记录 | `var/modetest.db`（SQLite + WAL） |
+| 三臂实验结果 / 盲评文件 | `var/three-arm/results.jsonl` / `blind.jsonl`（gitignore） |
 
 旧的 200 条任务集已删除（模板化严重、方向重合）。现在的 188 条按 `TASKS-SPEC.md` 由 agent 逐条撰写，交付物只有 `tasks.jsonl`。每条 planning 任务带 `meta.demands`（订单 → 工时），供判定器核对「每单只做一次、工时正确」；仅靠 prompt 自然语言无法可靠解析出工时。
 
@@ -87,11 +89,35 @@ ours:      task ──> POST /v1/enhance ──> prompt ──> ChatClient ─�
 | GET | `/api/runs/active` | **正在生成中的对比**（内存态，不落库） |
 | GET | `/api/runs?limit=50` | 记录列表（不含正文） |
 | GET | `/api/runs/{id}` | 记录详情（含两份输出），id 限定为数字 |
+| POST | `/api/runs/{id}/judge` | 触发判定器（planning 约束核验 / debate LLM-judge），回填判定字段 |
+| POST | `/api/arms/run` | 跑一次三臂实验（baseline / oracle / system），返回单臂结果与判定 |
 
 > `POST /api/runs` 是同步阻塞的：一次双臂要跑 40–130 秒，期间数据库里还没有记录。
 > 前端因此轮询 `/api/runs/active` 展示「生成中 + 当前阶段 + 已用时间」，
 > 否则用户点完按钮在记录页看不到任何东西。该状态只存内存——进程重启后不可能有
 > 还在跑的任务，写库反而会留下永远停在 PENDING 的僵尸记录。
+
+## 三臂实验
+
+回答「增强到底有没有用」：三臂共用同一执行模型与参数，唯一变量是 system 段。
+
+| 臂 | system 段 | 目的 |
+| --- | --- | --- |
+| baseline | 只给 `plan_v1` / `debate_v1` 输出格式要求 | 控制格式变量（避免 `parsed=false` 被误判为答案错误） |
+| oracle | `acceptableCards[0]` 的完整骨架（ModeRouter 只读端点） | 骨架本身的上限效应 |
+| system | 现状：按域召回 + 精判自选卡 | 当前系统真实水平 |
+
+```powershell
+# 先启动 ModeRouter + ModeTest，再从本目录运行
+python tools/three-arm.py --tasks data/tasks/holdout-frozen.jsonl --domain planning --limit 30
+python tools/three-arm.py --tasks data/tasks/holdout-frozen.jsonl --domain debate --limit 30
+python tools/three-arm-stats.py --in var/three-arm/results.jsonl
+```
+
+`results.jsonl` 是带臂标签的统一契约；`blind.jsonl` 去掉了臂、卡片、版本与耗时字段，
+供独立评审盲评。统计脚本输出 `oracle−baseline`（骨架效应）、`system−oracle`（选卡损失）、
+`system−baseline`（净效应）及 bootstrap 95% CI；主指标为 planning 约束全过率 / debate judge 均分。
+每域至少 30 条才可据以下结论。
 
 ## 配置
 
@@ -109,5 +135,9 @@ ours:      task ──> POST /v1/enhance ──> prompt ──> ChatClient ─�
 ## 已知情况
 
 - 一次双臂测试约 40–130 秒：增强 3–10 s，两次模型调用各 20–60 s（qwen3.7-flash 会先输出一段推理再给正文）。
-- **判定器还没实现**：现在只是把两份输出并排展示，没有自动校验约束、也没有打分。`constraints` / `meta.demands` / `acceptableCards` 都已经为判定准备好，但目前无人读取。
+- **判定器已实现，但必须显式触发**：`POST /api/runs/{id}/judge` 对指定记录回填判定结果，结果写回 `baselineScore` / `oursScore` / `baselinePassed` / `oursPassed` / `judgeDetail` 五列。
+  - planning：`PlanJudge` 把两份输出解析成 `plan_v1` 的 `assignments`，逐条核验 `capacity` / `window` / `mutex` / `precedence` / `ratio` 约束与 `meta.demands`（每单只做一次、工时正确）。**限制**：只认 `plan_v1` JSON，模型若未输出合法 JSON 则 `parsed=false`、计 0 分——这是格式不合规，不等于答案错误。
+  - debate：`DebateJudge` 用 LLM-as-judge 对 `coverage / logic / structure / relevance` 四项各 0–5 打分并取均值，给出 winner。**限制**：judge 由同一模型家族产出，存在自评偏置；正式报告需配人工抽检。
+  - 三臂实验（baseline / oracle / system）需另跑 `tools/three-arm.py`，本接口只判定双臂记录。
+- `acceptableCards` 是 ModeRouter 精判质量的标注，供 `tools/evaluate-routing.py` 复算选卡准确率，不参与双臂输出的判定。
 - 若模型把预算耗在 reasoning 上，正文可能为空；记录里会写明「输出为空（模型未返回正文）」。

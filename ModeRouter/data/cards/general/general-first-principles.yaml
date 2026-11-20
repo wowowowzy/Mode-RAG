@@ -14,3 +14,11 @@ failureModes:
 exitConditions:
   - 若重推结果与既有做法一致，如实说明既有做法已接近最优，不为新颖而改
 outputContract: 分节输出 constraints / derivation / candidate / comparison / recommendation
+
+taxonomy:
+  family: general
+relations:
+  excludes: []
+  augments: []
+  requires: []
+  verifyWith: []

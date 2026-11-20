@@ -14,3 +14,11 @@ failureModes:
 exitConditions:
   - 若区间无法进一步收紧且仍跨过决策阈值，说明信息不足，输出区间而非单点
 outputContract: 分节输出 lower / upper / tighten_steps / final_range / confidence
+
+taxonomy:
+  family: general
+relations:
+  excludes: []
+  augments: []
+  requires: []
+  verifyWith: []

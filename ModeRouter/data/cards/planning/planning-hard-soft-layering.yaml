@@ -14,3 +14,11 @@ failureModes:
 exitConditions:
   - 若硬约束本身无解，停止优化并报告是哪几条硬约束互相冲突
 outputContract: 输出 assignments 与 verification；软偏好未满足的情况写进 verification 的 detail
+
+taxonomy:
+  family: repair
+relations:
+  excludes: []
+  augments: []
+  requires: []
+  verifyWith: []

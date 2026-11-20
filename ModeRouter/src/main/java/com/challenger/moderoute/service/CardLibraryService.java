@@ -31,4 +31,10 @@ public interface CardLibraryService {
      * 未就绪返回空，调用方回落到 {@code VectorMapper.topK}。
      */
     Optional<List<ScoredCard>> topKInMemory(float[] query, int limit);
+
+    /**
+     * 带域白名单的内存检索：先按 domain 过滤卡片再取 topK，保证候选池被有效填满。
+     * domain 为 null / 空时行为与 {@link #topKInMemory(float[], int)} 一致。
+     */
+    Optional<List<ScoredCard>> topKInMemory(float[] query, int limit, String domain);
 }

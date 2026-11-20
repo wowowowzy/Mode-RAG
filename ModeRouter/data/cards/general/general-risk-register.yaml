@@ -14,3 +14,11 @@ failureModes:
 exitConditions:
   - 若风险等级依赖无法验证的概率估计，标注为待验证而不是直接排优先级
 outputContract: 表格输出 risk / probability / impact / level / response / owner / review_at
+
+taxonomy:
+  family: general
+relations:
+  excludes: []
+  augments: []
+  requires: []
+  verifyWith: []

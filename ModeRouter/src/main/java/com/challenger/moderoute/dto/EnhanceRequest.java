@@ -15,6 +15,10 @@ public record EnhanceRequest(
 
     public record Options(
             @Schema(description = "粗筛候选数，3–26，默认 8", example = "8")
-            Integer topK) {
+            Integer topK,
+
+            @Schema(description = "召回范围（与 topK 同类，不是指定卡片）：planning / debate / general；缺省不过滤",
+                    example = "debate")
+            String domain) {
     }
 }

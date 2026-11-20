@@ -1,7 +1,7 @@
 id: general-critical-path
 domain: general
 name: 关键路径识别
-applicableWhen: 多任务并行的项目排期、需要识别关键路径的任务；不适用于与该结构无关的任务。
+applicableWhen: 并行任务排期中识别决定总工期的最长依赖链与工期瓶颈的任务；不适用于只要求给出依赖拓扑顺序的排序。
 steps:
   - 列出任务与依赖关系
   - 估计每个任务的持续时间
@@ -14,3 +14,11 @@ failureModes:
 exitConditions:
   - 若关键路径上的任务都已到最短工期，说明总工期无法再压缩
 outputContract: 分节输出 tasks / dependencies / critical_path / float / compression_options
+
+taxonomy:
+  family: general
+relations:
+  excludes: [planning-precedence-topo]
+  augments: []
+  requires: []
+  verifyWith: []

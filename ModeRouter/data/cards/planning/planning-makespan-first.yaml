@@ -1,7 +1,7 @@
 id: planning-makespan-first
 domain: planning
 name: 总工期优先
-applicableWhen: 以尽快完成全部任务、压缩总完成时间为目标的排程任务；不适用于与该结构无关的任务。
+applicableWhen: 以压缩全部任务的总完成时间、追求最短工期为目标的排程；不适用于存在硬性最晚完成日约束的任务。
 steps:
   - 找出决定总完工时间的关键订单链
   - 优先保证关键链上不停工
@@ -14,3 +14,11 @@ failureModes:
 exitConditions:
   - 若继续压缩需要牺牲已声明为硬约束的条件，停止并说明当前总工期已接近可达下界
 outputContract: 输出 assignments 与 verification；verification 给出 makespan 与关键链订单
+
+taxonomy:
+  family: makespan
+relations:
+  excludes: [planning-window-first]
+  augments: []
+  requires: []
+  verifyWith: []

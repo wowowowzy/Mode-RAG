@@ -6,6 +6,7 @@ import java.util.List;
 
 /**
  * 一张模式卡：一段可以直接拼进 prompt 的推理骨架。
+ * family / relations 来自 YAML 的 taxonomy / relations 字段，属于不可变快照的一部分。
  */
 public record Card(
         String id,
@@ -15,12 +16,23 @@ public record Card(
         List<String> steps,
         List<String> failureModes,
         List<String> exitConditions,
-        String outputContract) {
+        String outputContract,
+        String family,
+        CardRelations relations) {
+
+    /** 兼容旧调用点：没有 taxonomy / relations 的卡按「无族、无关系」处理。 */
+    public Card(String id, CardDomain domain, String name, String applicableWhen,
+                List<String> steps, List<String> failureModes, List<String> exitConditions,
+                String outputContract) {
+        this(id, domain, name, applicableWhen, steps, failureModes, exitConditions,
+                outputContract, null, CardRelations.EMPTY);
+    }
 
     public Card {
         steps = List.copyOf(steps);
         failureModes = List.copyOf(failureModes);
         exitConditions = List.copyOf(exitConditions);
+        relations = relations == null ? CardRelations.EMPTY : relations;
     }
 
     /**

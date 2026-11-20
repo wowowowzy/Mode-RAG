@@ -2,13 +2,16 @@ package com.challenger.modetest.controller;
 
 import com.challenger.modetest.domain.TestRun;
 import com.challenger.modetest.dto.ActiveRunView;
+import com.challenger.modetest.dto.ArmResult;
 import com.challenger.modetest.dto.CardSummaryView;
 import com.challenger.modetest.dto.DomainView;
 import com.challenger.modetest.dto.TaskView;
 import com.challenger.modetest.repository.RunRepository;
 import com.challenger.modetest.repository.TaskRepository;
+import com.challenger.modetest.service.ArmService;
 import com.challenger.modetest.service.CardSummaryService;
 import com.challenger.modetest.service.CompareService;
+import com.challenger.modetest.service.JudgeService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -27,13 +30,18 @@ public class ApiController {
     private final RunRepository runRepository;
     private final CompareService compareService;
     private final CardSummaryService cardSummaryService;
+    private final JudgeService judgeService;
+    private final ArmService armService;
 
     public ApiController(TaskRepository taskRepository, RunRepository runRepository,
-                         CompareService compareService, CardSummaryService cardSummaryService) {
+                         CompareService compareService, CardSummaryService cardSummaryService,
+                         JudgeService judgeService, ArmService armService) {
         this.taskRepository = taskRepository;
         this.runRepository = runRepository;
         this.compareService = compareService;
         this.cardSummaryService = cardSummaryService;
+        this.judgeService = judgeService;
+        this.armService = armService;
     }
 
     @GetMapping("/domains")
@@ -91,6 +99,21 @@ public class ApiController {
                 .orElseThrow(() -> new IllegalArgumentException("记录不存在: " + id));
     }
 
+    /** 触发判定器（planning 约束核验 / debate LLM-judge），结果回填到记录上。 */
+    @PostMapping("/runs/{id:\\d+}/judge")
+    public TestRun judge(@PathVariable long id) {
+        return judgeService.judge(id);
+    }
+
+    /** 三臂实验：单臂运行并返回统一结果契约，由工具脚本组装三臂并做统计。 */
+    @PostMapping("/arms/run")
+    public ArmResult arm(@RequestBody ArmRequest request) {
+        return armService.run(request.taskId(), request.arm());
+    }
+
     public record CompareRequest(String taskId) {
+    }
+
+    public record ArmRequest(String taskId, String arm) {
     }
 }

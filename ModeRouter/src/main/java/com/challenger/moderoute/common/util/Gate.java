@@ -16,10 +16,30 @@ public final class Gate {
     }
 
     public static GateDecision decide(Decision decision, double injectFloor) {
-        int best = decision.argmaxIndex();
-        OptionSet.Option option = decision.optionList().get(best);
-        double confidence = decision.probabilitiesUnsafe()[best];
+        return decide(decision, injectFloor, 0.0);
+    }
 
+    public static GateDecision decide(Decision decision, double injectFloor, double noneMargin) {
+        double[] probs = decision.probabilitiesUnsafe();
+        java.util.List<OptionSet.Option> opts = decision.optionList();
+        int noneIndex = opts.size() - 1;
+
+        int best = decision.argmaxIndex();           // 含"平票优先 None"语义
+        // None margin：None 虽为 argmax，但未显著领先最佳真实卡时，改为注入该卡
+        if (opts.get(best).isNone() && noneMargin > 0) {
+            int bestCard = -1;
+            for (int i = 0; i < noneIndex; i++) {
+                if (bestCard < 0 || probs[i] > probs[bestCard]) {
+                    bestCard = i;
+                }
+            }
+            if (bestCard >= 0 && probs[noneIndex] < probs[bestCard] + noneMargin) {
+                best = bestCard;
+            }
+        }
+
+        OptionSet.Option option = opts.get(best);
+        double confidence = probs[best];
         if (option.isNone()) {
             return new GateDecision(GateAction.FALLBACK, option.letter(), null, confidence);
         }

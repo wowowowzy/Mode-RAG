@@ -1,7 +1,7 @@
 id: debate-common-ground
 domain: debate
 name: 共识收缩分歧
-applicableWhen: 分歧看似很大、需要先找共识再缩小分歧的讨论；不适用于与该结构无关的任务。
+applicableWhen: 分歧看似很大、需先找出双方都认可的共识再逐步缩小分歧；不适用于双方已无明显共识基础的对立。
 steps:
   - 列出双方都接受的事实
   - 列出双方都不反对的价值
@@ -14,3 +14,11 @@ failureModes:
 exitConditions:
   - 若最小分歧仍无法用事实解决，说明这是立场差异并停止继续论证
 outputContract: 输出 debate_v1，verdict 先列共识再列剩余分歧
+
+taxonomy:
+  family: argument
+relations:
+  excludes: []
+  augments: []
+  requires: []
+  verifyWith: []

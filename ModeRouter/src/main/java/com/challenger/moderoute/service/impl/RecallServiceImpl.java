@@ -33,6 +33,11 @@ public class RecallServiceImpl implements RecallService {
     }
 
     public List<ScoredCard> recall(String task, int topK) {
+        return recall(task, topK, null);
+    }
+
+    @Override
+    public List<ScoredCard> recall(String task, int topK, String domain) {
         CardLibrary library = libraryService.ensureVectors();
         if (!libraryService.vectorsReady()) {
             throw new RecallException("向量未就绪");
@@ -50,7 +55,8 @@ public class RecallServiceImpl implements RecallService {
 
         int limit = Math.min(topK, MAX_CARDS_FOR_DECISION);
         try {
-            List<ScoredCard> scored = libraryService.topKInMemory(query, limit)
+            // 域过滤只在内存路径生效；SQLite 后备路径暂不过滤（审计用 domainFilterApplied=false 标记）。
+            List<ScoredCard> scored = libraryService.topKInMemory(query, limit, domain)
                     .orElseGet(() -> vectorStore.topK(library.version(), embeddingBackend.name(), query, limit));
             if (scored.isEmpty()) {
                 throw new RecallException("向量存储未返回候选");

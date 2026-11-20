@@ -14,3 +14,11 @@ failureModes:
 exitConditions:
   - 若放宽到业务上限仍无解，停止并报告需要重新谈判的约束集合
 outputContract: 输出 assignments 与 verification；放宽的约束写进 verification 的 detail，并说明放宽幅度与代价
+
+taxonomy:
+  family: feasibility
+relations:
+  excludes: []
+  augments: []
+  requires: []
+  verifyWith: []

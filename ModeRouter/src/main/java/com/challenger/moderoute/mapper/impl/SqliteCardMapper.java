@@ -2,6 +2,7 @@ package com.challenger.moderoute.mapper.impl;
 
 import com.challenger.moderoute.config.ModeRouteProperties;
 import com.challenger.moderoute.entity.Card;
+import com.challenger.moderoute.entity.CardRelations;
 import com.challenger.moderoute.entity.enums.CardDomain;
 import com.challenger.moderoute.mapper.CardMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -73,7 +74,8 @@ public class SqliteCardMapper implements CardMapper, AutoCloseable {
                     }
                     try (PreparedStatement insert = connection.prepareStatement(
                             "INSERT INTO card (card_id, domain, name, applicable_when, steps, failure_modes,"
-                                    + " exit_conditions, output_contract, ordinal) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                                    + " exit_conditions, output_contract, family, relations, ordinal)"
+                                    + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                         for (int i = 0; i < cards.size(); i++) {
                             Card card = cards.get(i);
                             insert.setString(1, card.id());
@@ -84,7 +86,9 @@ public class SqliteCardMapper implements CardMapper, AutoCloseable {
                             insert.setString(6, toJson(card.failureModes()));
                             insert.setString(7, toJson(card.exitConditions()));
                             insert.setString(8, card.outputContract());
-                            insert.setInt(9, i);
+                            insert.setString(9, card.family());
+                            insert.setString(10, toJsonRelations(card.relations()));
+                            insert.setInt(11, i);
                             insert.addBatch();
                         }
                         insert.executeBatch();
@@ -112,7 +116,7 @@ public class SqliteCardMapper implements CardMapper, AutoCloseable {
         synchronized (lock) {
             try (PreparedStatement statement = connection().prepareStatement(
                     "SELECT card_id, domain, name, applicable_when, steps, failure_modes,"
-                            + " exit_conditions, output_contract FROM card ORDER BY ordinal ASC")) {
+                            + " exit_conditions, output_contract, family, relations FROM card ORDER BY ordinal ASC")) {
                 try (ResultSet rows = statement.executeQuery()) {
                     List<Card> cards = new ArrayList<>();
                     while (rows.next()) {
@@ -124,7 +128,9 @@ public class SqliteCardMapper implements CardMapper, AutoCloseable {
                                 fromJson(rows.getString("steps")),
                                 fromJson(rows.getString("failure_modes")),
                                 fromJson(rows.getString("exit_conditions")),
-                                rows.getString("output_contract")));
+                                rows.getString("output_contract"),
+                                rows.getString("family"),
+                                fromJsonRelations(rows.getString("relations"))));
                     }
                     return List.copyOf(cards);
                 }
@@ -148,6 +154,25 @@ public class SqliteCardMapper implements CardMapper, AutoCloseable {
             });
         } catch (Exception e) {
             throw new IllegalStateException("解析卡片字段失败: " + json, e);
+        }
+    }
+
+    private String toJsonRelations(CardRelations relations) {
+        try {
+            return mapper.writeValueAsString(relations == null ? CardRelations.EMPTY : relations);
+        } catch (Exception e) {
+            throw new IllegalStateException("序列化卡片关系失败", e);
+        }
+    }
+
+    private CardRelations fromJsonRelations(String json) {
+        if (json == null || json.isBlank() || json.equals("null")) {
+            return CardRelations.EMPTY;
+        }
+        try {
+            return mapper.readValue(json, CardRelations.class);
+        } catch (Exception e) {
+            throw new IllegalStateException("解析卡片关系失败: " + json, e);
         }
     }
 
@@ -175,7 +200,12 @@ public class SqliteCardMapper implements CardMapper, AutoCloseable {
                     + "failure_modes TEXT NOT NULL,"
                     + "exit_conditions TEXT NOT NULL,"
                     + "output_contract TEXT NOT NULL,"
+                    + "family TEXT,"
+                    + "relations TEXT,"
                     + "ordinal INTEGER NOT NULL)");
+            // 旧库平滑升级：缺列时补空列，下次 replaceAll（库版本变化必触发）会填值。
+            addColumnIfMissing(created, "card", "family", "TEXT");
+            addColumnIfMissing(created, "card", "relations", "TEXT");
             statement.execute("CREATE TABLE IF NOT EXISTS card_library ("
                     + "id INTEGER PRIMARY KEY CHECK (id = 1),"
                     + "library_version TEXT NOT NULL,"
@@ -192,6 +222,22 @@ public class SqliteCardMapper implements CardMapper, AutoCloseable {
         connection = created;
         log.info("卡片库已打开: {}（WAL）", dbPath);
         return connection;
+    }
+
+    private static void addColumnIfMissing(Connection connection, String table, String column, String type)
+            throws SQLException {
+        try (PreparedStatement pragma = connection.prepareStatement("PRAGMA table_info(" + table + ")");
+             ResultSet rows = pragma.executeQuery()) {
+            while (rows.next()) {
+                if (column.equalsIgnoreCase(rows.getString("name"))) {
+                    return;
+                }
+            }
+        }
+        try (Statement statement = connection.createStatement()) {
+            statement.execute("ALTER TABLE " + table + " ADD COLUMN " + column + " " + type);
+        }
+        log.info("卡片库补列 {}.{}", table, column);
     }
 
     @Override

@@ -1,7 +1,7 @@
 id: planning-window-first
 domain: planning
 name: 时间窗先行排布
-applicableWhen: 每个任务带最晚完成时间或可用时间区间的排程任务；不适用于与该结构无关的任务。
+applicableWhen: 每个任务带硬性最晚完成日或时间窗、优先保证不违反窗口的排程；不适用于只求总工期最短的任务。
 steps:
   - 按最晚完成日升序排列订单
   - 为每张订单划定可用的作业日区间
@@ -14,3 +14,11 @@ failureModes:
 exitConditions:
   - 若某订单窗口内所有产线余量之和不足其工时，报告该单不可行并列出具体缺口
 outputContract: 输出 assignments 与 verification，verification 需说明每条时间窗约束是否满足
+
+taxonomy:
+  family: window
+relations:
+  excludes: [planning-makespan-first]
+  augments: []
+  requires: []
+  verifyWith: []

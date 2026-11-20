@@ -57,7 +57,7 @@ java -jar target\moderoute-1.0.0.jar `
 ```json
 {
   "task": "任务文本，1–4000 字",
-  "options": { "topK": 8 },
+  "options": { "topK": 8, "domain": "debate" },
   "traceId": "可选"
 }
 ```
@@ -70,7 +70,7 @@ java -jar target\moderoute-1.0.0.jar `
     "action": "INJECT",
     "cardId": "planning-capacity-first",
     "confidence": 0.8241,
-    "libraryVersion": "a4eaf1689a64"
+    "libraryVersion": "9ded546a1697"
   }
 }
 ```
@@ -90,7 +90,7 @@ java -jar target\moderoute-1.0.0.jar `
 | 状态 | code | 触发条件 |
 | --- | --- | --- |
 | 400 | `INVALID_TASK` | task 缺失或空白 |
-| 400 | `INVALID_OPTIONS` | topK 不在 3–26 |
+| 400 | `INVALID_OPTIONS` | topK 不在 3–26，或 domain 不是 planning/debate/general |
 | 400 | `INVALID_JSON` | 请求体不是合法 JSON |
 | 422 | `TASK_TOO_LONG` | task 超过 4000 字 |
 | 503 | `LIBRARY_NOT_LOADED` | 模式库未加载 |
@@ -99,9 +99,12 @@ java -jar target\moderoute-1.0.0.jar `
 
 - `GET /healthz`：状态、库版本、卡数、向量是否就绪、当前 embedding 模型与精判 provider
 - `GET /v1/cards`：列出模式库（id / domain / name / applicableWhen）
+- `GET /v1/cards/{cardId}/skeleton`：返回指定卡的完整骨架（只读，404 `CARD_NOT_FOUND`）；仅供三臂实验 oracle 臂使用
 - OpenAPI：`/v3/api-docs`、`/swagger-ui.html`
 
-接口只做一件事：给定任务，让系统自己检索并判断该不该注入哪张卡。**没有调试参数**，也不接受指定卡片——要指定的场景（例如对照实验）由调用方在外部自己构造 baseline，不进入本服务。
+接口只做一件事：给定任务，让系统自己检索并判断该不该注入哪张卡。
+`options.domain` 与 `topK` 同类，是**召回范围**而不是指定卡片；`/v1/enhance` 不接受指定卡片。
+对照实验需要的「指定骨架」走独立的只读端点 `GET /v1/cards/{cardId}/skeleton`，不进入决策链路。
 
 ---
 
@@ -150,8 +153,9 @@ task ──embedding──> 余弦 top-k（内存扫描）
 | `moderoute.recall.strip-negative-clause` | `true` | 召回向量剔除「不适用于…」 |
 | `moderoute.decider.provider` | `jev-local` | `jev-local` / `jev-api` / `mock` |
 | `moderoute.decider.base-url` | `http://127.0.0.1:8765` | System One 兼容服务 |
-| `moderoute.decider.temperature` | `1.0` | **我们自己的**温度缩放，只在验证集上拟合 |
-| `moderoute.gate.inject-floor` | `0` | 可选安全阀；默认完全由「None 是否胜出」决定 |
+| `moderoute.decider.temperature` | `0.72` | **我们自己的**温度缩放，只在验证集上拟合 |
+| `moderoute.gate.inject-floor` | `0` | 可选安全阀：标定后置信度低于该值时回退 |
+| `moderoute.gate.none-margin` | `0.23` | None 必须领先最佳卡该值才回退；`0` 表示只要 None 胜出就回退 |
 | `moderoute.audit.dir` | `./var/audit` | 每请求一行 JSONL |
 
 ---
@@ -160,7 +164,7 @@ task ──embedding──> 余弦 top-k（内存扫描）
 
 ### 模式卡
 
-`data/cards/<domain>/*.yaml`，48 张 = 3 域 × 16 张（每域 16 种不同策略，没有变体）。字段：`id` / `domain` / `name` / `applicableWhen`（≤80 字，必须含「不适用于…」）/ `steps`（4–6）/ `failureModes`（2–4）/ `exitConditions`（1–3）/ `outputContract`。
+`data/cards/<domain>/*.yaml`，48 张 = 3 域 × 16 张（每域 16 种不同策略，没有变体）。字段：`id` / `domain` / `name` / `applicableWhen`（≤80 字，必须含「不适用于…」）/ `steps`（4–6）/ `failureModes`（2–4）/ `exitConditions`（1–3）/ `outputContract`，另含可选的 `taxonomy.family` 与 `relations`（`specializes` / `excludes` / `augments` / `requires` / `verifyWith`）。关系只存内存快照与 SQLite 字段，不引入图框架；`libraryVersion` 按文件内容哈希，自动覆盖这些新增字段。
 
 **存储方式**：YAML 是种子与编辑格式，运行时唯一读取源是 SQLite 的 `card` 表。
 
@@ -189,10 +193,12 @@ task ──embedding──> 余弦 top-k（内存扫描）
 | `traceId`、`ts`、`latencyMs`、`recallMs`、`decideMs` | 定位一次请求、拆开延迟来自哪一段 |
 | `libraryVersion`、`embeddingModel`、`vectorStore` | 固定当时的库与模型，判断结果能否跨版本比较 |
 | `taskSha256`、`taskLength` | 不存原文就能核对是不是同一个任务 |
-| `recall.candidates[{cardId,score}]` | 粗筛给了哪些候选、分数多少 |
+| `recall.candidates[{cardId,score}]` | 原始召回候选（P1 召回指标按此复算） |
+| `recall.domainFilter` / `domainFilterApplied` | 域过滤参数与是否真正生效（SQLite 后备路径为 false） |
+| `recall.narrowedCandidates` | P2 收缩后真正喂给 JEV 的候选 |
 | `decision.optionOrder` / `probabilities` / `rawProbabilities` / `engineConfidence` / `temperature` | 精判的字母顺序、原始与标定后的概率、引擎自报置信度 |
 | `gate.action` / `cardId` / `confidence` | 门控最后做了什么，是注入、回退还是降级 |
-| `render.prompt` / `chars` / `estimatedTokens` | 实际注入的文本与预算占用 |
+| `render.prompt` / `chars` / `estimatedTokens` / `composedCards` / `graphNodes` | 实际注入的文本、预算占用、参与组合的卡与关系图节点数 |
 | `degradedReason` | 降级原因（召回失败 / 精判失败 / 规则降级） |
 
 **没有「理由」字段，也不要加。** 决策模型不生成文本，给不出理由；可审计的证据就是概率分布本身。

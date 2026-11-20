@@ -14,3 +14,11 @@ failureModes:
 exitConditions:
   - 若材料不足以上升到单一结论，改为列出并列发现，不硬造结论
 outputContract: 结论一句，随后三到四条理由，每条理由下给一条事实依据
+
+taxonomy:
+  family: general
+relations:
+  excludes: []
+  augments: []
+  requires: []
+  verifyWith: []

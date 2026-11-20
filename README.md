@@ -160,6 +160,10 @@ curl.exe -X POST http://127.0.0.1:18080/v1/enhance `
 
 `/v1/enhance` 返回 `meta.action` 为 `INJECT` / `FALLBACK` / `DEGRADED`。若一直是 `DEGRADED`，多半是 JEV 没起或网关不可达，看响应里的 `degradedReason`。
 
+ModeTest（18090）侧：`POST /api/runs` 跑一次双臂对照，`POST /api/runs/{id}/judge` 触发判定
+（planning 约束核验 / debate LLM-judge）并回填分数。`options.domain` 可传
+`planning` / `debate` / `general` 限制召回范围（缺省不过滤），与按域 topK 一样属于召回范围参数。
+
 ## 常用配置
 
 | 配置 | 默认 | 说明 |
@@ -167,8 +171,12 @@ curl.exe -X POST http://127.0.0.1:18080/v1/enhance `
 | `MODEROUTE_EMBEDDING` | `openai` | 设为 `mock` 可离线自检，不联网 |
 | `MODEROUTE_DECIDER` | `jev-local` | `mock` 同样用于离线自检 |
 | `MODEROUTE_TEMPERATURE` | `0.72` | 置信度温度缩放，在验证集上拟合过 |
+| `MODEROUTE_NONE_MARGIN` | `0.23` | None 需领先最佳卡该概率才回退；`0` 表示 None 胜出即回退。**只对精判生效，规则降级路径强制为 0**（见开发计划 P0.2） |
 | `MODEROUTE_RULE_MIN_SCORE` | `0.04` | 规则降级时「都不合适」的等效阈值 |
 | `MODETEST_ROUTER_URL` | `http://127.0.0.1:18080` | ModeTest 指向的 ModeRouter |
+| `MODETEST_TOPK_PLANNING` | `8` | planning 域召回候选数 |
+| `MODETEST_TOPK_DEBATE` | `16` | debate 域召回候选数 |
+| `MODETEST_TOPK_GENERAL` | `8` | general 域召回候选数 |
 
 完整清单见各项目 README。
 
@@ -204,7 +212,8 @@ JEV 分发包里的 `.venv` 记录的是打包时的绝对路径，解压到别�
 **入库的**（必要资产）：
 - `ModeRouter/data/cards/` — 48 张推理模式卡（3 域 × 16 张）
 - `ModeRouter/lib/native/vec0.dll` — Windows x64 的 sqlite-vec 扩展
-- `ModeTest/data/tasks/tasks.jsonl` — 188 条评测任务（planning 116 / debate 72）
+- `ModeTest/data/tasks/tasks.jsonl` — 188 条开发集任务（planning 116 / debate 72）
+- `ModeTest/data/tasks/holdout-frozen.jsonl` — 冻结的 40 条 holdout（planning 20 / debate 20），`meta.split=holdout`；**调参不得使用**，最终成绩须单独报告（曾参与早期调参，非严格独立）
 
 **不入库的**（已在 `.gitignore` 排除）：
 - `target/`、`node_modules/`、`web/dist/` — 构建产物与依赖

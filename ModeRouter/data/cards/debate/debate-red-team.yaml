@@ -1,7 +1,7 @@
 id: debate-red-team
 domain: debate
 name: 红队攻击
-applicableWhen: 需要主动寻找某个方案致命弱点的评估任务；不适用于与该结构无关的任务。
+applicableWhen: 需要主动扮演反方、专找某个既定方案致命弱点的压力测试；不适用于要求中立比较双方的任务。
 steps:
   - 明确被攻击方案的核心主张
   - 假设它已经失败，倒推最可能的失败路径
@@ -14,3 +14,11 @@ failureModes:
 exitConditions:
   - 若所有弱点都只是低概率尾部风险，说明方案整体仍站得住，不为否定而否定
 outputContract: 输出 debate_v1，objections 按严重程度排序，concessions 保留方案成立的部分
+
+taxonomy:
+  family: adversarial
+relations:
+  excludes: []
+  augments: []
+  requires: []
+  verifyWith: []

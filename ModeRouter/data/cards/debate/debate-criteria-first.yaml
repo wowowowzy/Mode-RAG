@@ -1,7 +1,7 @@
 id: debate-criteria-first
 domain: debate
 name: 标准先行评比
-applicableWhen: 多方案评比、需要先立评价标准再打分的决策任务；不适用于与该结构无关的任务。
+applicableWhen: 对已有立场或方案按统一标准逐项评判其优劣、给出评判结论的任务；不适用于从零构建多方案加权选择矩阵。
 steps:
   - 先写出评价维度与各自权重
   - 说明每个维度的判定依据
@@ -14,3 +14,11 @@ failureModes:
 exitConditions:
   - 若排序对权重极敏感，输出「排序不稳健」并说明需要先确定权重
 outputContract: 输出 debate_v1，verdict 给出排序与最敏感维度
+
+taxonomy:
+  family: criteria
+relations:
+  excludes: [general-decision-matrix]
+  augments: []
+  requires: []
+  verifyWith: []

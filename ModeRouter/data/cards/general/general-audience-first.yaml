@@ -14,3 +14,11 @@ failureModes:
 exitConditions:
   - 若读者缺少必要背景且无法补齐，先给最小必要背景，不省略到无法理解
 outputContract: 先给一段结论，再给三到五条支撑，最后列出需要读者确认或行动的事项
+
+taxonomy:
+  family: general
+relations:
+  excludes: []
+  augments: []
+  requires: []
+  verifyWith: []

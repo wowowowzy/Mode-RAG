@@ -224,12 +224,29 @@ public class ModeRouteProperties {
         /** 注入下限，默认 0 表示完全由「None 是否胜出」决定，不做阈值工程。 */
         private double injectFloor = 0.0;
 
+        /**
+         * None 回退边际：None 概率必须比最佳候选卡高出该值才允许 FALLBACK。
+         * 默认 0 表示保持原行为（None 只要 argmax 胜出即回退）。
+         * >0 时用于挽救「None 仅略高于正确卡」导致的漏注入。
+         * 2026-11-20 重扫结果：0.23 为准确率平台起点（77/116），再增大只多 1 条却等于停用回退，
+         * 故取 0.23 保留兜底；与 application.yml 保持一致。
+         */
+        private double noneMargin = 0.23;
+
         public double getInjectFloor() {
             return injectFloor;
         }
 
         public void setInjectFloor(double injectFloor) {
             this.injectFloor = injectFloor;
+        }
+
+        public double getNoneMargin() {
+            return noneMargin;
+        }
+
+        public void setNoneMargin(double noneMargin) {
+            this.noneMargin = noneMargin;
         }
     }
 

@@ -1,7 +1,7 @@
 id: debate-claim-premise-chain
 domain: debate
 name: 论证链条拆解
-applicableWhen: 需要拆解论证结构、判断结论能否由前提推出的任务；不适用于与该结构无关的任务。
+applicableWhen: 需要拆解"结论能否由前提逻辑推出"的论证链任务；不适用于只比较证据多少或价值取舍的讨论。
 steps:
   - 标出最终结论
   - 逐层拆出支撑它的中间结论
@@ -14,3 +14,11 @@ failureModes:
 exitConditions:
   - 若论证依赖未说出的中间环节，指出缺口并说明补齐前无法判断结论
 outputContract: 输出 debate_v1，evidence 按推理层级排列，并标出最薄弱环节
+
+taxonomy:
+  family: argument
+relations:
+  excludes: []
+  augments: []
+  requires: []
+  verifyWith: []

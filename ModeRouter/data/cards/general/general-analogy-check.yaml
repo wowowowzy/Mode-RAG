@@ -14,3 +14,11 @@ failureModes:
 exitConditions:
   - 若核心对应关系在目标域失效，说明该类比不能用于外推结论
 outputContract: 分节输出 mapping / breaking_points / impact / usable_scope
+
+taxonomy:
+  family: general
+relations:
+  excludes: []
+  augments: []
+  requires: []
+  verifyWith: []

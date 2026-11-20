@@ -14,3 +14,11 @@ failureModes:
 exitConditions:
   - 若所有来源都同源或无法核验，说明无法确认，不给确定结论
 outputContract: 分节输出 claims / sources / independence / conflicts / assessment
+
+taxonomy:
+  family: general
+relations:
+  excludes: []
+  augments: []
+  requires: []
+  verifyWith: []

@@ -29,16 +29,21 @@ public class DecideServiceImpl implements DecideService {
 
     private final DecisionEngine decisionEngine;
     private final RuleFallback ruleFallback;
+    private final RuleVeto ruleVeto;
     private final double temperature;
     private final double injectFloor;
+    private final double noneMargin;
 
     public DecideServiceImpl(ModeRouteProperties properties,
                              DecisionEngine decisionEngine,
-                             RuleFallback ruleFallback) {
+                             RuleFallback ruleFallback,
+                             RuleVeto ruleVeto) {
         this.decisionEngine = decisionEngine;
         this.ruleFallback = ruleFallback;
+        this.ruleVeto = ruleVeto;
         this.temperature = properties.getDecider().getTemperature();
         this.injectFloor = properties.getGate().getInjectFloor();
+        this.noneMargin = properties.getGate().getNoneMargin();
     }
 
     @Override
@@ -58,16 +63,22 @@ public class DecideServiceImpl implements DecideService {
                 calibrated,
                 temperature,
                 scores.reportedConfidence());
-        return gate(decision);
+        return gate(decision, task, library);
     }
 
     @Override
     public DecisionOutcome fallback(String task, CardLibrary library, int maxCandidates) {
-        return gate(ruleFallback.decide(task, library, maxCandidates));
+        // 规则降级路径不使用 noneMargin：RuleFallback 的 None 代表概率被固定为
+        // rule-min-score（不是模型判别的结果），归一化后与最佳卡的差值最大只有约 0.14，
+        // 永远小于 noneMargin=0.23。若套用 margin，「都不合适」兜底会被强行改成 INJECT。
+        Decision decision = ruleFallback.decide(task, library, maxCandidates);
+        GateDecision gated = Gate.decide(decision, injectFloor, 0.0);
+        return new DecisionOutcome(decision, gated.action(), gated.cardId(), gated.confidence());
     }
 
-    private DecisionOutcome gate(Decision decision) {
-        GateDecision gated = Gate.decide(decision, injectFloor);
+    private DecisionOutcome gate(Decision decision, String task, CardLibrary library) {
+        GateDecision gated = Gate.decide(decision, injectFloor, noneMargin);
+        gated = ruleVeto.apply(task, decision, library, gated);
         return new DecisionOutcome(decision, gated.action(), gated.cardId(), gated.confidence());
     }
 }

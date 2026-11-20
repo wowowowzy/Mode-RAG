@@ -14,3 +14,11 @@ failureModes:
 exitConditions:
   - 若某个风险既无法预防也无法监测，明确指出这是必须接受的残余风险
 outputContract: 分节输出 failure_scenarios / ranked_risks / early_signals / mitigations / accepted_risks
+
+taxonomy:
+  family: general
+relations:
+  excludes: []
+  augments: []
+  requires: []
+  verifyWith: []

@@ -26,6 +26,12 @@ public class ModeRouterClient {
     private final String endpoint;
     private final Duration timeout;
 
+    /**
+     * 召回候选池大小由调用方按域给（见 ModeTestProperties.TopK）。
+     * 实测 topK 对两域的作用相反：debate 需要更大候选池，planning 反而会被稀释。
+     */
+    private static final int DEFAULT_TOP_K = 8;
+
     public ModeRouterClient(ModeTestProperties properties, ObjectMapper mapper) {
         this.mapper = mapper;
         this.baseUrl = properties.getRouterUrl().replaceAll("/+$", "");
@@ -72,11 +78,59 @@ public class ModeRouterClient {
     public record CardsPayload(String libraryVersion, List<CardEntry> cards) {
     }
 
+    /** 取指定卡片的完整骨架（ModeRouter 只读端点，供 oracle 臂使用）。 */
+    public SkeletonResult cardSkeleton(String cardId) {
+        HttpResponse<String> response;
+        try {
+            HttpRequest request = HttpRequest.newBuilder(
+                            URI.create(baseUrl + "/v1/cards/" + cardId + "/skeleton"))
+                    .timeout(timeout).GET().build();
+            response = http.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RouterException("读取卡片骨架被中断", e);
+        } catch (Exception e) {
+            throw new RouterException("读取卡片骨架失败: " + describe(e), e);
+        }
+        if (response.statusCode() != 200) {
+            throw new RouterException("读取卡片骨架返回 HTTP " + response.statusCode()
+                    + ": " + snippet(response.body()));
+        }
+        try {
+            JsonNode root = mapper.readTree(response.body());
+            return new SkeletonResult(
+                    root.path("cardId").asText(""),
+                    root.path("domain").asText(""),
+                    root.path("prompt").asText(""));
+        } catch (Exception e) {
+            throw new RouterException("解析卡片骨架失败: " + e.getMessage(), e);
+        }
+    }
+
+    public record SkeletonResult(String cardId, String domain, String prompt) {
+    }
+
     public EnhanceResult enhance(String task) {
+        return enhance(task, DEFAULT_TOP_K);
+    }
+
+    public EnhanceResult enhance(String task, int topK) {
+        return enhance(task, topK, null);
+    }
+
+    /**
+     * domain 与 topK 同为召回范围参数；null / 空表示不限制召回域。
+     */
+    public EnhanceResult enhance(String task, int topK, String domain) {
         String body;
         try {
             var payload = mapper.createObjectNode();
             payload.put("task", task);
+            var options = payload.putObject("options");
+            options.put("topK", topK);
+            if (domain != null && !domain.isBlank()) {
+                options.put("domain", domain);
+            }
             body = mapper.writeValueAsString(payload);
         } catch (Exception e) {
             throw new RouterException("序列化增强请求失败", e);

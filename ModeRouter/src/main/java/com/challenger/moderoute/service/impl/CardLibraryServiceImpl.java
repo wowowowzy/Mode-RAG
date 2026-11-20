@@ -133,6 +133,11 @@ public class CardLibraryServiceImpl implements CardLibraryService {
 
     @Override
     public Optional<List<ScoredCard>> topKInMemory(float[] query, int limit) {
+        return topKInMemory(query, limit, null);
+    }
+
+    @Override
+    public Optional<List<ScoredCard>> topKInMemory(float[] query, int limit, String domain) {
         List<float[]> current = vectors;
         if (current == null || query == null || query.length == 0) {
             return Optional.empty();
@@ -143,13 +148,40 @@ public class CardLibraryServiceImpl implements CardLibraryService {
         if (limit <= 0) {
             return Optional.of(List.of());
         }
+
+        // domain 白名单：debate 只留 debate 卡；planning 留 planning+general；
+        // general 与缺省保持全量（向后兼容）。先过滤再取 topK，保证候选池被填满。
+        java.util.Set<String> allowed = allowedDomains(domain);
         List<ScoredCard> scored = new ArrayList<>(cardIds.size());
         for (int i = 0; i < cardIds.size(); i++) {
-            scored.add(new ScoredCard(cardIds.get(i), round6(CosineSimilarity.of(query, current.get(i)))));
+            String cardId = cardIds.get(i);
+            if (allowed != null) {
+                Card card = library.byId().get(cardId);
+                if (card == null || !allowed.contains(card.domain().key())) {
+                    continue;
+                }
+            }
+            scored.add(new ScoredCard(cardId, round6(CosineSimilarity.of(query, current.get(i)))));
         }
         scored.sort(Comparator.comparingDouble(ScoredCard::score).reversed()
                 .thenComparing(ScoredCard::cardId));
         return Optional.of(List.copyOf(scored.subList(0, Math.min(limit, scored.size()))));
+    }
+
+    /**
+     * null 表示不过滤（全量）。非 null 时返回允许通过的域集合。
+     * 合法性由 EnhanceServiceImpl 校验，这里只做映射，未知值按不过滤处理。
+     */
+    private static java.util.Set<String> allowedDomains(String domain) {
+        if (domain == null || domain.isBlank()) {
+            return null;
+        }
+        return switch (domain) {
+            case "debate" -> java.util.Set.of("debate");
+            case "planning" -> java.util.Set.of("planning", "general");
+            case "general" -> null;
+            default -> null;
+        };
     }
 
     /**

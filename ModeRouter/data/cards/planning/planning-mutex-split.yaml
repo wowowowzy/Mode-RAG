@@ -14,3 +14,11 @@ failureModes:
 exitConditions:
   - 若拆分也无法在窗口内放下全部工时，报告剩余缺口并给出已排部分，明确说明不完整
 outputContract: 输出 assignments，同一 order 允许多条记录，但总 hours 必须等于需求
+
+taxonomy:
+  family: mutex
+relations:
+  excludes: []
+  augments: []
+  requires: []
+  verifyWith: []

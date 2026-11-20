@@ -14,3 +14,11 @@ failureModes:
 exitConditions:
   - 若某订单的最晚开工早于允许起点，报告该单需加急或外协，不强行压缩工期
 outputContract: 输出 assignments 与 verification，逐单对比最晚开工与实际开工
+
+taxonomy:
+  family: precedence
+relations:
+  excludes: []
+  augments: []
+  requires: []
+  verifyWith: []

@@ -14,3 +14,11 @@ failureModes:
 exitConditions:
   - 若某个子问题需要外部信息才能回答，明确标注并继续其余部分
 outputContract: 分节输出 restated / sub_questions / dependencies / answers / summary
+
+taxonomy:
+  family: general
+relations:
+  excludes: []
+  augments: []
+  requires: []
+  verifyWith: []

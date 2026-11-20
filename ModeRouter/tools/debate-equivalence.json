@@ -1,0 +1,6 @@
+{
+  "symmetric_compare": ["debate-steelman-each", "debate-common-ground", "debate-value-tradeoff", "debate-fact-value-split"],
+  "argument_structure": ["debate-assumption-audit", "debate-claim-premise-chain", "debate-premise-gap", "debate-fallacy-check"],
+  "evidence": ["debate-evidence-hierarchy", "debate-evidence-gap", "debate-falsification", "debate-decision-threshold"],
+  "stress": ["debate-scenario-stress", "debate-red-team", "debate-criteria-first", "debate-steelman-then-attack"]
+}

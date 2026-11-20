@@ -14,3 +14,11 @@ failureModes:
 exitConditions:
   - 若上限导致比例与总量无法同时满足，报告冲突并给出两种取舍方案，不擅自选一种
 outputContract: 输出 assignments 与每对象的实际占比、偏差
+
+taxonomy:
+  family: ratio
+relations:
+  excludes: []
+  augments: []
+  requires: []
+  verifyWith: []

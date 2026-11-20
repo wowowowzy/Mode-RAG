@@ -1,7 +1,7 @@
 id: planning-mutex-serialize
 domain: planning
 name: 互斥资源串行化
-applicableWhen: 多个任务争用同一资源或时段、需要定先后的排程任务；不适用于与该结构无关的任务。
+applicableWhen: 存在明确互斥约束——指定两张订单不能排在同一资源同一时段或同一天，需为互斥订单定先后；不适用于没有订单互斥约束的排程。
 steps:
   - 列出所有互斥资源与各自的争用订单
   - 为每组互斥订单建立先后顺序
@@ -14,3 +14,12 @@ failureModes:
 exitConditions:
   - 若互斥订单总时长超过资源可用窗口，报告该组不可行，不要靠压缩单张订单时长凑数
 outputContract: 输出 assignments 与 verification，互斥约束必须逐条给出结论
+
+taxonomy:
+  family: mutex
+relations:
+  specializes: planning-mutex-split
+  excludes: []
+  augments: []
+  requires: []
+  verifyWith: []

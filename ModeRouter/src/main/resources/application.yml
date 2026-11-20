@@ -45,6 +45,11 @@ moderoute:
   gate:
     # 默认 0：注入与否完全由「None 是否胜出」决定，不做阈值工程。
     inject-floor: ${MODEROUTE_INJECT_FLOOR:0.0}
+    # None 必须比最佳候选卡高出该概率才回退；0 保持原行为。拟合方式见开发计划 P2。
+    # 2026-11-20 在库版本 9ded546a1697 上重扫（标定后概率、planning 116 条）：
+    # 0.23 起准确率进入平台（77/116），再抬到 0.39 只多 1 条但等于停用 FALLBACK，
+    # 故取平台起点 0.23：保留少量回退兜底，代价 1/116。
+    none-margin: ${MODEROUTE_NONE_MARGIN:0.23}
   audit:
     enabled: ${MODEROUTE_AUDIT:true}
     dir: ${MODEROUTE_AUDIT_DIR:./var/audit}

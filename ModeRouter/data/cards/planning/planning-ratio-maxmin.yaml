@@ -1,7 +1,7 @@
 id: planning-ratio-maxmin
 domain: planning
 name: 保底均衡分配
-applicableWhen: 多个对象间尽量均衡、避免一方被明显少分的任务；不适用于与该结构无关的任务。
+applicableWhen: 以最大化最小份额为目标、优先照顾分得最少对象的分配任务；不适用于只求负载方差最小的任务。
 steps:
   - 先给每个对象分配最小保底量
   - 检查保底量之和是否已超过总量
@@ -14,3 +14,11 @@ failureModes:
 exitConditions:
   - 若保底量之和超过总量，停止并报告需要下调保底的差额
 outputContract: 输出 assignments 与各对象最终量、极差
+
+taxonomy:
+  family: ratio
+relations:
+  excludes: [planning-balance-load]
+  augments: []
+  requires: []
+  verifyWith: []

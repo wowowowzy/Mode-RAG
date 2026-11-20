@@ -1,7 +1,7 @@
 id: debate-steelman-each
 domain: debate
 name: 逐方钢人化对比
-applicableWhen: 需要对称强化并比较双方立场、判断哪边更有理的任务；不适用于与该结构无关的任务。
+applicableWhen: 只把正反双方论证各自补强到最强并对称呈现、不主动反驳的立场任务；不适用于需要先复述再针对性反驳的评估。
 steps:
   - 为 A 方构造最强论证（不是稻草人）
   - 为 B 方构造最强论证
@@ -14,3 +14,11 @@ failureModes:
 exitConditions:
   - 分歧纯属价值判断时，不强行裁决，输出「取决于价值取向」并说明分歧点
 outputContract: 输出 debate_v1，stances 覆盖双方，verdict 区分事实与价值两类结论
+
+taxonomy:
+  family: adversarial
+relations:
+  excludes: [debate-steelman-then-attack]
+  augments: []
+  requires: []
+  verifyWith: []

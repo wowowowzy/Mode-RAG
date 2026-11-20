@@ -1,7 +1,7 @@
 id: debate-fallacy-check
 domain: debate
 name: 谬误逐条核对
-applicableWhen: 怀疑论证存在逻辑谬误、需要逐条核对的任务；不适用于与该结构无关的任务。
+applicableWhen: 逐条核对推理形式是否违反逻辑规则、定位偷换概念等谬误的任务；不适用于前提真实性本身的审查。
 steps:
   - 复述对方论证的完整结构
   - 逐条比对常见谬误清单
@@ -14,3 +14,11 @@ failureModes:
 exitConditions:
   - 若去掉被指出的谬误后论证依然成立，明确承认对方结论未受影响
 outputContract: 输出 debate_v1，objections 只保留影响有效性的谬误
+
+taxonomy:
+  family: argument
+relations:
+  excludes: [debate-assumption-audit]
+  augments: []
+  requires: []
+  verifyWith: []

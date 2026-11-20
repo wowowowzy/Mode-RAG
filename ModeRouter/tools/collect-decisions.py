@@ -6,8 +6,9 @@
 因此可以随时中断，重跑会跳过已完成的条目。
 
 用法（在 ModeRouter 目录下）：
-  python tools/collect-decisions.py
-  python tools/collect-decisions.py --limit 5        # 先试跑 5 条
+  python tools/collect-decisions.py --topk-map "planning=8,debate=16"   # 跨域全量（推荐）
+  python tools/collect-decisions.py --limit 5                            # 先试跑 5 条
+  python tools/collect-decisions.py --tasks <holdout.jsonl> --topk-map "planning=8,debate=16"
 """
 import argparse
 import hashlib
@@ -18,8 +19,9 @@ import urllib.request
 from pathlib import Path
 
 
-def post(endpoint: str, task: str, timeout: int = 120) -> dict:
-    body = json.dumps({"task": task}, ensure_ascii=False).encode("utf-8")
+def post(endpoint: str, task: str, topk: int = 8, timeout: int = 120) -> dict:
+    body = json.dumps({"task": task, "options": {"topK": topk}},
+                      ensure_ascii=False).encode("utf-8")
     request = urllib.request.Request(
         endpoint, data=body, headers={"Content-Type": "application/json"})
     with urllib.request.urlopen(request, timeout=timeout) as response:
@@ -33,7 +35,20 @@ def main():
     parser.add_argument("--out", default="var/fit/progress.jsonl")
     parser.add_argument("--sleep", type=float, default=0.0)
     parser.add_argument("--limit", type=int, default=0)
+    # 召回候选池大小：客户端默认 planning=8 / debate=16，故通用默认取 8。
+    # 注意：跨域采集必须传 --topk-map "planning=8,debate=16"，否则 debate 记录会被
+    # 错误的 topK 污染，离线分析结论不可信（默认值只适用于单域 planning）。
+    parser.add_argument("--topk", type=int, default=8,
+                        help="单域候选池大小，默认 8；跨域采集请改用 --topk-map")
+    # 按域覆盖：如 "planning=8,debate=16"。命中时优先于 --topk。
+    parser.add_argument("--topk-map", default="",
+                        help="按域指定候选池，如 'planning=8,debate=16'；跨域采集必传")
     args = parser.parse_args()
+
+    topk_map = {}
+    for item in filter(None, (x.strip() for x in args.topk_map.split(","))):
+        domain, _, value = item.partition("=")
+        topk_map[domain.strip()] = int(value)
 
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -60,7 +75,8 @@ def main():
                 continue
             began = time.time()
             try:
-                response = post(args.endpoint, task["prompt"])
+                response = post(args.endpoint, task["prompt"],
+                                topk_map.get(task.get("domain"), args.topk))
             except Exception as error:
                 fail += 1
                 print(f"[{index}/{len(tasks)}] FAIL {task['taskId']}: {error}",

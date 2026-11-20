@@ -1,7 +1,7 @@
 id: planning-precedence-topo
 domain: planning
 name: 依赖拓扑排序
-applicableWhen: 任务之间有明确前后依赖、需按依赖排序的任务；不适用于与该结构无关的任务。
+applicableWhen: 任务间有前后依赖、需输出满足依赖顺序的拓扑序列的排程任务；不适用于工期瓶颈或关键路径识别。
 steps:
   - 列出所有依赖边并检查是否有环
   - 找出入度为零的订单作为第一批
@@ -14,3 +14,11 @@ failureModes:
 exitConditions:
   - 若依赖图有环，立即停止并指出环上的订单，不要输出看似合理的顺序
 outputContract: 输出 assignments 与 verification，依赖约束逐条给出前置完成时刻
+
+taxonomy:
+  family: precedence
+relations:
+  excludes: [general-critical-path]
+  augments: []
+  requires: []
+  verifyWith: []

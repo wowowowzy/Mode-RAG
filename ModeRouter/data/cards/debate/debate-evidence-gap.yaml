@@ -1,7 +1,7 @@
 id: debate-evidence-gap
 domain: debate
 name: 证据缺口判定
-applicableWhen: 判断争论是否因证据不足而无法下结论的任务；不适用于与该结构无关的任务。
+applicableWhen: 争论卡在证据不足、无法下结论，需指出还缺哪些证据的任务；不适用于证据已充分可直接判断的情形。
 steps:
   - 列出双方各自需要的证据
   - 标记哪些证据已具备、哪些缺失
@@ -14,3 +14,11 @@ failureModes:
 exitConditions:
   - 若关键证据缺失且无法获取，输出「当前信息不足以裁决」并列出需要补充的材料
 outputContract: 输出 debate_v1，verdict 明确写成「不足以裁决」或给出暂定倾向
+
+taxonomy:
+  family: evidence
+relations:
+  excludes: []
+  augments: [general-source-triangulation]
+  requires: []
+  verifyWith: []

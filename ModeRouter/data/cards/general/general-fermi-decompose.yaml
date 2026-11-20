@@ -14,3 +14,11 @@ failureModes:
 exitConditions:
   - 若两条独立路径结果相差超过一个数量级，说明拆分有误，停止给结论并重新拆解
 outputContract: 分节输出 factors / ranges / result_range / dominant_factor / cross_check
+
+taxonomy:
+  family: general
+relations:
+  excludes: []
+  augments: []
+  requires: []
+  verifyWith: []

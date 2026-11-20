@@ -14,3 +14,11 @@ failureModes:
 exitConditions:
   - 若连续多轮修复后违例数不再下降，停止并报告残余违例与建议的取舍
 outputContract: 输出 assignments 与 verification，残余违例必须显式列出
+
+taxonomy:
+  family: repair
+relations:
+  excludes: []
+  augments: []
+  requires: []
+  verifyWith: []

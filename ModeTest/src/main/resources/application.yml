@@ -19,6 +19,11 @@ modetest:
   router-timeout-ms: 30000
   tasks-file: ${MODETEST_TASKS:./data/tasks/tasks.jsonl}
   sqlite-path: ${MODETEST_DB:./var/modetest.db}
+  # 按域召回候选池：debate 需要更大池子，planning 反而会被更多候选稀释（见 TopK 注释）
+  topk:
+    planning: ${MODETEST_TOPK_PLANNING:8}
+    debate: ${MODETEST_TOPK_DEBATE:16}
+    general: ${MODETEST_TOPK_GENERAL:8}
   chat:
     temperature: 0.2
 

@@ -2,6 +2,7 @@ package com.challenger.moderoute.mapper;
 
 import com.challenger.moderoute.common.util.LibraryVersion;
 import com.challenger.moderoute.entity.Card;
+import com.challenger.moderoute.entity.CardRelations;
 import com.challenger.moderoute.entity.enums.CardDomain;
 
 import org.yaml.snakeyaml.LoaderOptions;
@@ -23,7 +24,8 @@ import java.util.Set;
 public final class CardLoader {
 
     private static final Set<String> ALLOWED_KEYS = Set.of(
-            "id", "domain", "name", "applicableWhen", "steps", "failureModes", "exitConditions", "outputContract");
+            "id", "domain", "name", "applicableWhen", "steps", "failureModes", "exitConditions",
+            "outputContract", "taxonomy", "relations");
 
     private static final int MAX_APPLICABLE_WHEN = 80;
 
@@ -145,10 +147,111 @@ public final class CardLoader {
             errors.add(where + ": exitConditions 必须是 1–3 条（实际 " + exitConditions.size() + "）");
         }
 
+        String family = parseFamily(raw, where, errors);
+        CardRelations relations = parseRelations(raw, where, errors);
+
         if (!errors.isEmpty()) {
             return null;
         }
-        return new Card(id, domain, name, applicableWhen, steps, failureModes, exitConditions, outputContract);
+        return new Card(id, domain, name, applicableWhen, steps, failureModes, exitConditions,
+                outputContract, family, relations);
+    }
+
+    /** taxonomy.family 可选；缺省为 null（表示不属于任何约束族）。 */
+    private static String parseFamily(Map<String, Object> raw, String where, List<String> errors) {
+        Object taxonomy = raw.get("taxonomy");
+        if (taxonomy == null) {
+            return null;
+        }
+        if (!(taxonomy instanceof Map<?, ?> map)) {
+            errors.add(where + ": taxonomy 必须是映射");
+            return null;
+        }
+        Object family = toStringMap(map).get("family");
+        if (family == null) {
+            return null;
+        }
+        String text = String.valueOf(family).trim();
+        if (text.isEmpty()) {
+            errors.add(where + ": taxonomy.family 不能为空");
+            return null;
+        }
+        if (!text.matches("[a-z][a-z0-9-]*")) {
+            errors.add(where + ": taxonomy.family 只能含小写字母、数字与连字符: " + text);
+            return null;
+        }
+        return text;
+    }
+
+    /** relations 可选；字段缺失视为空列表。所有 cardId 引用做存在性与格式校验。 */
+    private static CardRelations parseRelations(Map<String, Object> raw, String where, List<String> errors) {
+        Object value = raw.get("relations");
+        if (value == null) {
+            return CardRelations.EMPTY;
+        }
+        if (!(value instanceof Map<?, ?> map)) {
+            errors.add(where + ": relations 必须是映射");
+            return CardRelations.EMPTY;
+        }
+        Map<String, Object> node = toStringMap(map);
+        String specializes = optionalString(node, "specializes", where, errors);
+        List<String> excludes = optionalStringList(node, "excludes", where, errors);
+        List<String> augments = optionalStringList(node, "augments", where, errors);
+        List<String> requires = optionalStringList(node, "requires", where, errors);
+        List<String> verifyWith = optionalStringList(node, "verifyWith", where, errors);
+
+        java.util.List<String> refs = new java.util.ArrayList<>();
+        if (specializes != null) {
+            refs.add(specializes);
+        }
+        refs.addAll(excludes);
+        refs.addAll(augments);
+        refs.addAll(requires);
+        refs.addAll(verifyWith);
+        for (String ref : refs) {
+            if (!ref.matches("^(planning|debate|general)-[a-z0-9]+(-[a-z0-9]+)*$")) {
+                errors.add(where + ": relations 引用了非法 cardId: " + ref);
+            }
+        }
+        if (!errors.isEmpty()) {
+            return CardRelations.EMPTY;
+        }
+        return new CardRelations(specializes, excludes, augments, requires, verifyWith);
+    }
+
+    private static String optionalString(Map<String, Object> raw, String key, String where, List<String> errors) {
+        Object value = raw.get(key);
+        if (value == null) {
+            return null;
+        }
+        String text = String.valueOf(value).trim();
+        if (text.isEmpty()) {
+            errors.add(where + ": relations." + key + " 不能为空");
+            return null;
+        }
+        return text;
+    }
+
+    private static List<String> optionalStringList(Map<String, Object> raw, String key,
+                                                   String where, List<String> errors) {
+        Object value = raw.get(key);
+        if (value == null) {
+            return List.of();
+        }
+        if (!(value instanceof List<?> list)) {
+            errors.add(where + ": relations." + key + " 必须是列表");
+            return List.of();
+        }
+        List<String> out = new ArrayList<>();
+        for (Object item : list) {
+            String text = item == null ? "" : String.valueOf(item).trim();
+            if (text.isEmpty()) {
+                errors.add(where + ": relations." + key + " 含空元素");
+            } else {
+                out.add(text);
+            }
+        }
+        return List.copyOf(out);
     }
 
     private static String requireString(Map<String, Object> raw, String key, String where, List<String> errors) {

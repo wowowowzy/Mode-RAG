@@ -14,3 +14,11 @@ failureModes:
 exitConditions:
   - 若全局需求超过全局可用工时，立即报告总量不可行并给出差额，不要输出部分排程冒充满分方案
 outputContract: 输出完整 assignments 与逐条 verification，不得只给变更清单
+
+taxonomy:
+  family: repair
+relations:
+  excludes: []
+  augments: []
+  requires: []
+  verifyWith: []

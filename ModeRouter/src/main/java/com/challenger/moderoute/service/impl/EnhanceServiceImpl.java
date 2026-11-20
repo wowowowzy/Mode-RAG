@@ -49,19 +49,25 @@ public class EnhanceServiceImpl implements EnhanceService {
 
     private final CardLibraryService libraryService;
     private final RecallService recallService;
+    private final CandidateNarrower candidateNarrower;
     private final DecideService decideService;
     private final RenderService renderService;
+    private final CardComposer cardComposer;
     private final AuditService auditService;
 
     public EnhanceServiceImpl(CardLibraryService libraryService,
                               RecallService recallService,
+                              CandidateNarrower candidateNarrower,
                               DecideService decideService,
                               RenderService renderService,
+                              CardComposer cardComposer,
                               AuditService auditService) {
         this.libraryService = libraryService;
         this.recallService = recallService;
+        this.candidateNarrower = candidateNarrower;
         this.decideService = decideService;
         this.renderService = renderService;
+        this.cardComposer = cardComposer;
         this.auditService = auditService;
     }
 
@@ -72,6 +78,7 @@ public class EnhanceServiceImpl implements EnhanceService {
         String task = request.task();
         validateTask(task);
         int topK = resolveTopK(request);
+        String domain = resolveDomain(request);
         String traceId = resolveTraceId(request.traceId());
 
         CardLibrary library = libraryService.library();
@@ -80,12 +87,12 @@ public class EnhanceServiceImpl implements EnhanceService {
         }
 
         long start = System.nanoTime();
-        PipelineResult result = runPipeline(task, topK, library);
+        PipelineResult result = runPipeline(task, topK, domain, library);
         Outcome outcome = result.outcome();
         long latencyMs = (System.nanoTime() - start) / 1_000_000L;
 
         auditService.record(buildAudit(traceId, outcome, library, latencyMs,
-                result.recallMs(), result.decideMs(), topK, task));
+                result.recallMs(), result.decideMs(), topK, domain, task));
 
         return new EnhanceResponse(
                 outcome.prompt(),
@@ -99,64 +106,67 @@ public class EnhanceServiceImpl implements EnhanceService {
 
     // ---------------------------------------------------------------- 主链路
 
-    private PipelineResult runPipeline(String task, int topK, CardLibrary library) {
+    private PipelineResult runPipeline(String task, int topK, String domain, CardLibrary library) {
         List<ScoredCard> candidates;
         long recallStart = System.nanoTime();
         try {
-            candidates = recallService.recall(task, topK);
+            candidates = recallService.recall(task, topK, domain);
         } catch (RuntimeException e) {
             log.warn("召回失败，转规则降级: {}", e.getMessage());
             long recallMs = (System.nanoTime() - recallStart) / 1_000_000L;
             return new PipelineResult(
-                    degrade(task, topK, library, candidatesOrEmpty(null), "recall: " + e.getMessage()),
+                    degrade(task, topK, library, candidatesOrEmpty(null), List.of(), "recall: " + e.getMessage()),
                     recallMs, -1);
         }
         long recallMs = (System.nanoTime() - recallStart) / 1_000_000L;
         if (candidates.isEmpty()) {
             return new PipelineResult(
-                    new Outcome(GateAction.FALLBACK, null, 0.0, "", candidates, null, null), recallMs, -1);
+                    new Outcome(GateAction.FALLBACK, null, 0.0, "", candidates, List.of(), null, null), recallMs, -1);
         }
 
+        // P2 候选收缩：只收窄 JEV 的选项，审计仍保留原始召回候选供 P1 指标复算。
+        List<ScoredCard> narrowed = candidateNarrower.narrow(task, candidates, library);
         DecisionOutcome decided;
         long decideStart = System.nanoTime();
         try {
-            decided = decideService.decide(task, candidates, library);
+            decided = decideService.decide(task, narrowed, library);
         } catch (RuntimeException e) {
             log.warn("精判失败，转规则降级: {}", e.getMessage());
             long decideMs = (System.nanoTime() - decideStart) / 1_000_000L;
             return new PipelineResult(
-                    degrade(task, topK, library, candidates, "decider: " + e.getMessage()),
+                    degrade(task, topK, library, candidates, narrowed, "decider: " + e.getMessage()),
                     recallMs, decideMs);
         }
         long decideMs = (System.nanoTime() - decideStart) / 1_000_000L;
 
         if (decided.action() == GateAction.FALLBACK) {
             return new PipelineResult(
-                    new Outcome(GateAction.FALLBACK, null, decided.confidence(), "", candidates, decided.decision(), null),
+                    new Outcome(GateAction.FALLBACK, null, decided.confidence(), "", candidates, narrowed, decided.decision(), null),
                     recallMs, decideMs);
         }
         Card card = library.byId().get(decided.cardId());
-        String prompt = renderService.render(card);
+        CardComposer.Composed composed = cardComposer.compose(card, renderService.render(card));
         return new PipelineResult(
-                new Outcome(GateAction.INJECT, card.id(), decided.confidence(), prompt, candidates, decided.decision(), null),
+                new Outcome(GateAction.INJECT, card.id(), decided.confidence(), composed.prompt(),
+                        candidates, narrowed, decided.decision(), null),
                 recallMs, decideMs);
     }
 
     private Outcome degrade(String task, int topK, CardLibrary library,
-                            List<ScoredCard> candidates, String reason) {
+                            List<ScoredCard> candidates, List<ScoredCard> narrowed, String reason) {
         try {
             DecisionOutcome decided = decideService.fallback(task, library, topK);
             if (decided.action() == GateAction.INJECT && decided.cardId() != null) {
                 Card card = library.byId().get(decided.cardId());
-                String prompt = renderService.render(card);
-                return new Outcome(GateAction.DEGRADED, card.id(), decided.confidence(), prompt,
-                        candidates, decided.decision(), reason);
+                CardComposer.Composed composed = cardComposer.compose(card, renderService.render(card));
+                return new Outcome(GateAction.DEGRADED, card.id(), decided.confidence(), composed.prompt(),
+                        candidates, narrowed, decided.decision(), reason);
             }
-            return new Outcome(GateAction.DEGRADED, null, decided.confidence(), "", candidates,
+            return new Outcome(GateAction.DEGRADED, null, decided.confidence(), "", candidates, narrowed,
                     decided.decision(), reason);
         } catch (RuntimeException e) {
             log.error("规则降级也失败: {}", e.getMessage(), e);
-            return new Outcome(GateAction.DEGRADED, null, 0.0, "", candidates, null,
+            return new Outcome(GateAction.DEGRADED, null, 0.0, "", candidates, narrowed, null,
                     reason + "; ruleFallback: " + e.getMessage());
         }
     }
@@ -186,6 +196,20 @@ public class EnhanceServiceImpl implements EnhanceService {
         return topK;
     }
 
+    /** domain 是召回范围，与 topK 同类；只允许三域，非法值返回 400。空值表示不过滤。 */
+    private String resolveDomain(EnhanceRequest request) {
+        String domain = request.options() == null ? null : request.options().domain();
+        if (domain == null || domain.isBlank()) {
+            return null;
+        }
+        String trimmed = domain.trim();
+        if (!trimmed.equals("planning") && !trimmed.equals("debate") && !trimmed.equals("general")) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_OPTIONS",
+                    "options.domain 只能是 planning / debate / general，实际为 " + trimmed);
+        }
+        return trimmed;
+    }
+
     private String resolveTraceId(String traceId) {
         if (traceId == null || traceId.isBlank()) {
             return UUID.randomUUID().toString();
@@ -202,7 +226,7 @@ public class EnhanceServiceImpl implements EnhanceService {
 
     private Map<String, Object> buildAudit(String traceId, Outcome outcome,
                                            CardLibrary library, long latencyMs, long recallMs, long decideMs,
-                                           int topK, String task) {
+                                           int topK, String domain, String task) {
         Map<String, Object> event = new LinkedHashMap<>();
         event.put("ts", Instant.now().toString());
         event.put("traceId", traceId);
@@ -229,7 +253,22 @@ public class EnhanceServiceImpl implements EnhanceService {
                 candidates.add(item);
             }
         }
-        event.put("recall", Map.of("candidates", candidates));
+        Map<String, Object> recallNode = new LinkedHashMap<>();
+        recallNode.put("domainFilter", domain);
+        // 域过滤只在内存路径生效；SQLite 后备路径未过滤，如实标记。
+        recallNode.put("domainFilterApplied", domain != null && libraryService.memoryVectors().isPresent());
+        recallNode.put("candidates", candidates);
+        List<Map<String, Object>> narrowed = new ArrayList<>();
+        if (outcome.narrowedCandidates() != null) {
+            for (ScoredCard candidate : outcome.narrowedCandidates()) {
+                Map<String, Object> item = new LinkedHashMap<>();
+                item.put("cardId", candidate.cardId());
+                item.put("score", candidate.score());
+                narrowed.add(item);
+            }
+        }
+        recallNode.put("narrowedCandidates", narrowed);
+        event.put("recall", recallNode);
 
         Decision decision = outcome.decision();
         if (decision != null) {
@@ -264,6 +303,9 @@ public class EnhanceServiceImpl implements EnhanceService {
         render.put("chars", outcome.prompt().length());
         render.put("estimatedTokens", TokenEstimator.estimate(outcome.prompt()));
         render.put("prompt", outcome.prompt());
+        Card selected = outcome.cardId() == null ? null : library.byId().get(outcome.cardId());
+        render.put("composedCards", selected == null ? List.of() : List.of(selected.id()));
+        render.put("graphNodes", selected == null ? 0 : selected.relations().nodeCount());
         event.put("render", render);
 
         if (outcome.note() != null) {
@@ -305,6 +347,7 @@ public class EnhanceServiceImpl implements EnhanceService {
             double confidence,
             String prompt,
             List<ScoredCard> candidates,
+            List<ScoredCard> narrowedCandidates,
             Decision decision,
             String note) {
     }

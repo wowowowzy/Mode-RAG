@@ -2,6 +2,7 @@ package com.challenger.modetest.service.impl;
 
 import com.challenger.modetest.client.ChatGateway;
 import com.challenger.modetest.client.ModeRouterClient;
+import com.challenger.modetest.config.ModeTestProperties;
 import com.challenger.modetest.domain.Task;
 import com.challenger.modetest.domain.TestRun;
 import com.challenger.modetest.dto.ActiveRunView;
@@ -38,6 +39,8 @@ public class CompareServiceImpl implements CompareService {
     private final RunRepository runRepository;
     private final ModeRouterClient routerClient;
     private final ChatGateway chatGateway;
+    /** 按域取召回 topK：planning 8 / debate 16（见 ModeTestProperties.TopK 注释）。 */
+    private final ModeTestProperties.TopK topK;
 
     /** 正在测试中的任务，key 为 taskId；同时充当并发去重的锁。 */
     private final Map<String, InFlight> running = new ConcurrentHashMap<>();
@@ -45,11 +48,13 @@ public class CompareServiceImpl implements CompareService {
     public CompareServiceImpl(TaskRepository taskRepository,
                               RunRepository runRepository,
                               ModeRouterClient routerClient,
-                              ChatGateway chatGateway) {
+                              ChatGateway chatGateway,
+                              ModeTestProperties properties) {
         this.taskRepository = taskRepository;
         this.runRepository = runRepository;
         this.routerClient = routerClient;
         this.chatGateway = chatGateway;
+        this.topK = properties.getTopk();
     }
 
     @Override
@@ -92,7 +97,7 @@ public class CompareServiceImpl implements CompareService {
         flight.phase = "检索推理骨架";
         ModeRouterClient.EnhanceResult enhance;
         try {
-            enhance = routerClient.enhance(task.prompt());
+            enhance = routerClient.enhance(task.prompt(), topK.forDomain(task.domain()), task.domain());
         } catch (RuntimeException e) {
             log.warn("增强失败: {}", e.getMessage());
             return runRepository.save(new TestRun(0, task.taskId(), task.domain(), createdAt,

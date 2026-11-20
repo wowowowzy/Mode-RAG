@@ -231,4 +231,43 @@ class CardLibraryServiceImplTest {
         assertThat(service.topKInMemory(new float[]{1f, 0f}, 3)).isEmpty();
         assertThat(service.memoryVectors()).isEmpty();
     }
+
+    @Test
+    void 域过滤_debate候选只含debate卡() {
+        CardLibraryServiceImpl service = service(new FakeModel(0, false), new StubStore());
+        service.ensureVectors();
+        float[] query = new float[]{1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f};
+
+        List<ScoredCard> debate = service.topKInMemory(query, 16, "debate").orElseThrow();
+        assertThat(debate).isNotEmpty();
+        assertThat(debate).allSatisfy(c ->
+                assertThat(c.cardId()).startsWith("debate-"));
+    }
+
+    @Test
+    void 域过滤_planning候选只含planning与general卡() {
+        CardLibraryServiceImpl service = service(new FakeModel(0, false), new StubStore());
+        service.ensureVectors();
+        float[] query = new float[]{1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f};
+
+        List<ScoredCard> planning = service.topKInMemory(query, 8, "planning").orElseThrow();
+        assertThat(planning).isNotEmpty();
+        assertThat(planning).allSatisfy(c ->
+                assertThat(c.cardId().startsWith("planning-") || c.cardId().startsWith("general-")).isTrue());
+    }
+
+    @Test
+    void 不带domain的行为与改动前一致() {
+        CardLibraryServiceImpl service = service(new FakeModel(0, false), new StubStore());
+        service.ensureVectors();
+        float[] query = new float[]{1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f};
+
+        List<ScoredCard> plain = service.topKInMemory(query, 16).orElseThrow();
+        List<ScoredCard> generalDomain = service.topKInMemory(query, 16, "general").orElseThrow();
+        List<ScoredCard> nullDomain = service.topKInMemory(query, 16, null).orElseThrow();
+
+        assertThat(generalDomain).containsExactlyElementsOf(plain);
+        assertThat(nullDomain).containsExactlyElementsOf(plain);
+        assertThat(plain).hasSize(16);
+    }
 }

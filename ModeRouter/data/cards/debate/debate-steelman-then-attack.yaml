@@ -1,7 +1,7 @@
 id: debate-steelman-then-attack
 domain: debate
 name: 强化后定向反驳
-applicableWhen: 先强化一方论证再集中攻击其薄弱处的任务；不适用于与该结构无关的任务。
+applicableWhen: 先复述对方最强论点、再针对其薄弱处集中反驳的单边评估；不适用于只做对称复述不反驳的任务。
 steps:
   - 选定被评估的一方，构造其最强论证
   - 找出该论证依赖的关键前提
@@ -14,3 +14,12 @@ failureModes:
 exitConditions:
   - 若反驳只能诉诸价值取向，停止判负并说明这是价值分歧
 outputContract: 输出 debate_v1，被攻击方的 thesis 必须是其最强版本
+
+taxonomy:
+  family: adversarial
+relations:
+  specializes: debate-steelman-each
+  excludes: [debate-steelman-each]
+  augments: []
+  requires: []
+  verifyWith: []
